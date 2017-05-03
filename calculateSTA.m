@@ -1,3 +1,4 @@
 function STA = calculateSTA(StimulusDesignMAtrix, cellSpikesVector)
-    STA = StimulusDesignMAtrix * cellSpikes;
+    numOfSpikes = sum(cellSpikesVector);
+    STA = (StimulusDesignMAtrix' * cellSpikesVector) / numOfSpikes;
 end

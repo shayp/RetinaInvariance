@@ -14,7 +14,7 @@
 %            ihbas = orthogonalized basis
 %            ihbasis = original (non-orthogonal) basis 
 %
-function [iht, ihbas, ihbasis] = buildBaseVectorsForPostSpikeAndCoupling(numOfVectors,hpeaks, b)
+function [iht, ihbas, ihbasis] = buildBaseVectorsForPostSpikeAndCoupling(numOfVectors,dt,hpeaks, b)
 
 % Check input values
 if (hpeaks(1)+b) < 0, 
@@ -34,15 +34,6 @@ iht = (dt:dt:mxt)';
 nt = length(iht);        % number of points in iht
 ff = @(x,c,dc)(cos(max(-pi,min(pi,(x-c)*pi/dc/2)))+1)/2; % raised cosine basis vector
 ihbasis = ff(repmat(nlin(iht+b), 1, numOfVectors), repmat(ctrs, nt, 1), db);
-
-% create first basis vector as step-function for absolute refractory period
-if absref >= dt
-    ii = find(iht<absref);
-    ih0 = zeros(size(ihbasis,1),1);
-    ih0(ii) = 1;
-    ihbasis(ii,:) = 0;
-    ihbasis = [ih0,ihbasis];
-end
 
 % compute orthogonalized basis
 ihbas = orth(ihbasis);  

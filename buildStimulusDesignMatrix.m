@@ -1,5 +1,5 @@
 function stimulusDesignMatrix = buildStimulusDesignMatrix(filterSizeBeforeSpike, stimulus)
-    stimLength = len(stimulus);
+    stimLength = length(stimulus);
     % build the design matrix, training data
     stimulusDesignMatrix = [ones(stimLength,1), ... 
         hankel([zeros(filterSizeBeforeSpike-1,1);stimulus(1:end-filterSizeBeforeSpike+1)], ... 

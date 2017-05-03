@@ -1,4 +1,4 @@
-function [logli, dL] = Loss_GLM_logli_exp(learnedParameters,dataForLearnning)
+function [logli, dL, H] = Loss_GLM_logli_exp(learnedParameters,dataForLearnning)
 % [neglogli, dL, H] = Loss_GLM_logli_exp(prs)
 %(Taken from pillowLab)
 % Compute negative log-likelihood of data undr the GLM model with
@@ -19,26 +19,24 @@ binSizeInSecond = dataForLearnning.binSizeInSecond;           % absolute bin siz
 
 % Unpack GLM prs;
 stimulusFilter = learnedParameters(1:stimulusFilterSize);
-firingRateParam = learnedParameters(stimulusFilterSize+1);
-postspikehistoryFilters = learnedParameters(stimulusFilterSize+2:end);
-
+postspikehistoryFilters = learnedParameters(stimulusFilterSize+1:end)
+sum(learnedParameters(2:end))
+spikesTrain = dataForLearnning.spikesTrain;
 % Extract some other stuff we'll use a lot
 stimulusDesignMatrix = dataForLearnning.stimulusDesignMatrix; % stimulus design matrix
 spikeHistoryDesignMatrix = dataForLearnning.spikeHistoryDesignMatrix;    % spike history design matrix
 spikesoccurence = dataForLearnning.spikesccurence;   % binary spike vector
-%M = Xstruct.Minterp;   % matrix for interpolating from stimulus bins to spike train bins
 dataLen = dataForLearnning.dataLen;   % number of bins in spike train vector
 nsp = sum(spikesoccurence);     % number of spikes
 
 % -------- Compute sum of filter reponses -----------------------
-linearFilter = stimulusDesignMatrix*stimulusFilter + spikeHistoryDesignMatrix*postspikehistoryFilters + firingRateParam; % stim-dependent + spikehist-dependent inputs
+linearFilter = stimulusDesignMatrix*stimulusFilter' + spikeHistoryDesignMatrix * postspikehistoryFilters'; % stim-dependent + spikehist-dependent inputs
 
 % ---------  Compute output of nonlinearity  ------------------------
 expValue = exp(linearFilter);
-
 % ---------  Compute log-likelihood ---------------------------------
 Trm1 = sum(expValue)*binSizeInSecond;  % non-spike term
-Trm2 = -sum(linearFilter(spikesoccurence)); % spike term
+Trm2 = -linearFilter' * spikesTrain; % spike term
 logli = Trm1 + Trm2;
 
 % ---------  Compute Gradient -----------------
@@ -46,18 +44,33 @@ if (nargout > 1)
     
     % Non-spiking terms (Term 1)
     dLdStimulusFilter0 = (expValue'*stimulusDesignMatrix)';
-    dLdMeanFiringRate0 = sum(expValue);
-    dLdSpikeHistoryFilter0 = (expValue'*spikeHistoryDesignMatrix)'; 
+    %dLdMeanFiringRate0 = sum(expValue);
+    dLdSpikeHistoryFilter0 = (expValue'*spikeHistoryDesignMatrix)';
     
     % Spiking terms (Term 2)
-    dLdStimulusFilter1 = (sum(stimulusDesignMatrix))';
-    dLdMeanFiringRate1 = nsp;
+    dLdStimulusFilter1 = stimulusDesignMatrix' * spikesTrain;
+    %dLdMeanFiringRate1 = nsp;
     dLdSpikeHistoryFilter1 = sum(spikeHistoryDesignMatrix(spikesoccurence,:),1)';
 
     % Combine terms
     dLdStimulusFilter = dLdStimulusFilter0 * binSizeInSecond - dLdStimulusFilter1;
-    dLdMeanFiringRate = dLdMeanFiringRate0*binSizeInSecond - dLdMeanFiringRate1;
-    dLdSpikeHistoryFilter = dLdSpikeHistoryFilter0*binSizeInSecond - dLdSpikeHistoryFilter1;
+    %dLdMeanFiringRate = dLdMeanFiringRate0*binSizeInSecond - dLdMeanFiringRate1;
+    dLdSpikeHistoryFilter = dLdSpikeHistoryFilter0 * binSizeInSecond - dLdSpikeHistoryFilter1;
     
-    dL = [dLdStimulusFilter; dLdMeanFiringRate; dLdSpikeHistoryFilter];  
+    dL = [dLdStimulusFilter' dLdSpikeHistoryFilter'];
+    %dL = dLdStimulusFilter';
+end
+ if (nargout > 2)
+   ddrrdiag = spdiags(expValue,0,dataLen,dataLen); 
+   
+        % k and b terms
+    Hk = stimulusDesignMatrix'*bsxfun(@times,stimulusDesignMatrix,expValue);
+    %Hk = stimulusDesignMatrix' * ddrrdiag * stimulusDesignMatrix; % Hkk (k filter)
+    Hh = (spikeHistoryDesignMatrix'*(bsxfun(@times,spikeHistoryDesignMatrix,expValue)))*binSizeInSecond;  % Hh (h filter)
+        % (here bsxfun is faster than diagonal multiplication)
+    Hkh = ((spikeHistoryDesignMatrix' * ddrrdiag)* stimulusDesignMatrix * binSizeInSecond)';         % Hhk (cross-term)
+    H = [[Hk Hkh]; [Hkh' Hh]];
+     % H = Hk';
+
+ end
 end
