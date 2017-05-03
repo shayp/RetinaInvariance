@@ -19,7 +19,7 @@ binSizeInSecond = dataForLearnning.binSizeInSecond;           % absolute bin siz
 
 % Unpack GLM prs;
 stimulusFilter = learnedParameters(1:stimulusFilterSize);
-%%% postspikehistoryFilters = learnedParameters(stimulusFilterSize+1:end);
+postspikehistoryFilters = learnedParameters(stimulusFilterSize+1:end);
 spikesTrain = dataForLearnning.spikesTrain;
 
 % Extract some other stuff we'll use a lot
@@ -30,9 +30,8 @@ dataLen = dataForLearnning.dataLen;   % number of bins in spike train vector
 nsp = sum(spikesoccurence);     % number of spikes
 
 % -------- Compute sum of filter reponses -----------------------
-%linearFilter = stimulusDesignMatrix*stimulusFilter';
- %%% linearFilter = stimulusDesignMatrix*stimulusFilter' + spikeHistoryDesignMatrix * postspikehistoryFilters'; % stim-dependent + spikehist-dependent inputs
- linearFilter = stimulusDesignMatrix*stimulusFilter';
+ linearFilter = stimulusDesignMatrix*stimulusFilter' + spikeHistoryDesignMatrix * postspikehistoryFilters'; 
+ %linearFilter = stimulusDesignMatrix*stimulusFilter';
 % ---------  Compute output of nonlinearity  ------------------------
 expValue = exp(linearFilter) * binSizeInSecond;
 
@@ -49,35 +48,35 @@ if (nargout > 1)
    
     %dLdMeanFiringRate0 = sum(expValue);
     
-    %%% dLdSpikeHistoryFilter0 = spikeHistoryDesignMatrix' * expValue;
+    dLdSpikeHistoryFilter0 = spikeHistoryDesignMatrix' * expValue;
     
     % Spiking terms (Term 2)
     dLdStimulusFilter1 = stimulusDesignMatrix' * spikesTrain;
     
     %dLdMeanFiringRate1 = nsp;
-    %%% dLdSpikeHistoryFilter1 = spikeHistoryDesignMatrix' * spikesTrain;
+    dLdSpikeHistoryFilter1 = spikeHistoryDesignMatrix' * spikesTrain;
     
     % Combine terms
     dLdStimulusFilter = dLdStimulusFilter0  - dLdStimulusFilter1;
     %dLdMeanFiringRate = dLdMeanFiringRate0*binSizeInSecond - dLdMeanFiringRate1;
-    %%% dLdSpikeHistoryFilter = dLdSpikeHistoryFilter0 - dLdSpikeHistoryFilter1;
+    dLdSpikeHistoryFilter = dLdSpikeHistoryFilter0 - dLdSpikeHistoryFilter1;
     
-    %dL = [dLdStimulusFilter' dLdSpikeHistoryFilter'];
-    dL = dLdStimulusFilter;
+    dL = [dLdStimulusFilter' dLdSpikeHistoryFilter'];
+    %dL = dLdStimulusFilter;
 end
  if (nargout > 2)
-   %%% ddrrdiag = spdiags(expValue, 0, dataLen, dataLen); 
+   ddrrdiag = spdiags(expValue, 0, dataLen, dataLen); 
    
-   H = stimulusDesignMatrix' * bsxfun(@times,stimulusDesignMatrix,expValue);
+   %H = stimulusDesignMatrix' * bsxfun(@times,stimulusDesignMatrix,expValue);
 
-    %%% Hk = stimulusDesignMatrix' * bsxfun(@times,stimulusDesignMatrix,expValue);
+     Hk = stimulusDesignMatrix' * bsxfun(@times,stimulusDesignMatrix,expValue);
 
     %Hk = stimulusDesignMatrix' * ddrrdiag * stimulusDesignMatrix; % Hkk (k filter)
-    %%% Hh = spikeHistoryDesignMatrix' * bsxfun(@times,spikeHistoryDesignMatrix,expValue);  % Hh (h filter)
+    Hh = spikeHistoryDesignMatrix' * bsxfun(@times,spikeHistoryDesignMatrix,expValue);  % Hh (h filter)
 
-    %%% Hkh = ((spikeHistoryDesignMatrix' * ddrrdiag) * stimulusDesignMatrix)';         % Hhk (cross-term)
+    Hkh = ((spikeHistoryDesignMatrix' * ddrrdiag) * stimulusDesignMatrix)';         % Hhk (cross-term)
 
-    %%% H = [[Hk Hkh]; [Hkh' Hh]];
+    H = [[Hk Hkh]; [Hkh' Hh]];
 
  end
 end

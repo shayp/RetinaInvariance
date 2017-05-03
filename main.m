@@ -60,7 +60,7 @@ dataForLearnning.spikesTrain = spstrain;
 % 
   opts = optimset('Gradobj','on','Hessian','on','display','iter-detailed');
   cellPostSpike = zeros(1,numOfBaseVectors);
-  learnedParameters = [cellSTA'];
+  learnedParameters = [cellSTA' cellPostSpike];
 
 % This matrix computes differences between adjacent coeffs
 Dx1 = spdiags(ones(filterSizeBeforeSpike - 1,1)*[-1 1],0:1,filterSizeBeforeSpike-2,filterSizeBeforeSpike - 1);
@@ -74,25 +74,24 @@ D = blkdiag(0,Dx);
 
 % Allocate space for train and test errors
 negLtrain_sm = zeros(nlam,1);  % training error
-w_smooth = zeros(filterSizeBeforeSpike,nlam); % filters for each lambda
+w_smooth = zeros(length(learnedParameters),nlam); % filters for each lambda
 figure();
+subplot(2,1,1);
 for jj = 1:nlam
     wmap = learnedParameters; 
     % Compute MAP estimate
     Cinv = lamvals(jj)*D; % set inverse prior covariance
     negLikelihhod = @(wmap)Loss_GLM_logli_exp(wmap,dataForLearnning); % set negative log-likelihood as loss func
-    lossfun = @(wmap)neglogposterior(wmap,negLikelihhod,Cinv);
+    lossfun = @(wmap)neglogposterior(wmap,negLikelihhod,Cinv, filterSizeBeforeSpike,lamvals(jj));
     wmap = fminunc(lossfun,wmap,opts);
     w_smooth(:,jj) = wmap;
     negLtrain_sm(jj) = Loss_GLM_logli_exp(wmap, dataForLearnning);
-    hold on;
-    plot(w_smooth(:,jj));
-    hold off;
+
 end
   [~,imax] = max(negLtrain_sm);
   hold on;
   plot(cellSTA, '-');
-  hold off;
-  hold on;
-  plot(w_smooth(:,imax), '.r');
-  
+  plot(w_smooth(:,imax));
+  spikeHistoryVector = w_smooth(end - numOfBaseVectors + 1 :end,imax)' * postSpikeBaseVectors';
+  subplot(2,1,2);
+  plot(spikeHistoryVector)

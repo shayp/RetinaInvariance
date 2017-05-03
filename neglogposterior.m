@@ -1,4 +1,4 @@
-function [negLP,grad,H] = neglogposterior(prs,negloglifun,Cinv)
+function [negLP,grad,H] = neglogposterior(prs,negloglifun,Cinv, linearFilterLength,lambda)
 % [negLP,grad,H] = neglogposterior(prs,negloglifun,Cinv)
 %
 % Compute negative log-posterior given a negative log-likelihood function
@@ -15,21 +15,22 @@ function [negLP,grad,H] = neglogposterior(prs,negloglifun,Cinv)
 %      H [d x d] - Hessian (second deriv matrix)
 
 % Compute negative log-posterior by adding quadratic penalty to log-likelihood
-
+linearFilter = prs(1:linearFilterLength);
+L2Smooth = [0 diff(linearFilter)];
 switch nargout
-
+        
     case 1  % evaluate function
-        negLP = negloglifun(prs) + .5*prs'*Cinv*prs;
+        negLP = negloglifun(prs) + .5*sum(L2Smooth.^2) * lambda;
     
     case 2  % evaluate function and gradient
         [negLP,grad] = negloglifun(prs);
-        negLP = negLP + .5*prs*Cinv*prs';        
-        grad = grad + Cinv*prs';
+        negLP = negloglifun(prs) + .5*sum(L2Smooth.^2) * lambda;
+        grad(1:linearFilterLength) = grad(1:linearFilterLength) + L2Smooth * lambda;
 
     case 3  % evaluate function and gradient
         [negLP,grad,H] = negloglifun(prs);
-        negLP = negLP + .5*prs*Cinv*prs';        
-        grad = grad + Cinv*prs';
-        H = H + Cinv;
+        negLP = negloglifun(prs) + .5*sum(L2Smooth.^2) * lambda;
+        grad(1:linearFilterLength) = grad(1:linearFilterLength) + L2Smooth * lambda;
+        H(1:linearFilterLength,1:linearFilterLength)  = H(1:linearFilterLength,1:linearFilterLength) + Cinv;
 end
 
