@@ -20,7 +20,7 @@ Stim = Stim - mean(Stim);
  
  % We spilt the data for train and test
  lengthOfExp = length(scaledSpikes);
- trainfrac = .05;  % fraction of data to use for training
+ trainfrac = .3;  % fraction of data to use for training
  ntrain = ceil(lengthOfExp*trainfrac);  % number of training samples
  ntest = lengthOfExp - ntrain; % number of test samples
  iitest = 1:ntest; % time indices for test
@@ -62,14 +62,37 @@ dataForLearnning.spikesTrain = spstrain;
   cellPostSpike = zeros(1,numOfBaseVectors);
   learnedParameters = [cellSTA'];
 
-  % Precompute some quantities (X'X and X'*y) for training and test data
-  Imat = eye(filterSizeBeforeSpike); % identity matrix of size of filter + const
-  Imat(1,1) = 0; % remove penalty on constant dc offset
-  Cinv = 1024*Imat; % set inverse prior covariance
-  size(Cinv)
-  negLikelihhod = @(learnedParameters)Loss_GLM_logli_exp(learnedParameters,dataForLearnning); % set negative log-likelihood as loss func
-  lossfun = @(prs)neglogposterior(learnedParameters,negLikelihhod,Cinv);
-  filtML = fminunc(lossfun,learnedParameters,opts);
-  plot(filtML);
+% This matrix computes differences between adjacent coeffs
+Dx1 = spdiags(ones(filterSizeBeforeSpike - 1,1)*[-1 1],0:1,filterSizeBeforeSpike-2,filterSizeBeforeSpike - 1);
+Dx = Dx1'*Dx1; % computes squared diffs
+% Select smoothing penalty by cross-validation 
+lamvals = 2.^(1:14); % grid of lambda values (ridge parameters)
+nlam = length(lamvals);
+
+% Embed Dx matrix in matrix with one extra row/column for constant coeff
+D = blkdiag(0,Dx); 
+
+% Allocate space for train and test errors
+negLtrain_sm = zeros(nlam,1);  % training error
+w_smooth = zeros(filterSizeBeforeSpike,nlam); % filters for each lambda
+figure();
+for jj = 1:nlam
+    wmap = learnedParameters; 
+    % Compute MAP estimate
+    Cinv = lamvals(jj)*D; % set inverse prior covariance
+    negLikelihhod = @(wmap)Loss_GLM_logli_exp(wmap,dataForLearnning); % set negative log-likelihood as loss func
+    lossfun = @(wmap)neglogposterior(wmap,negLikelihhod,Cinv);
+    wmap = fminunc(lossfun,wmap,opts);
+    w_smooth(:,jj) = wmap;
+    negLtrain_sm(jj) = Loss_GLM_logli_exp(wmap, dataForLearnning);
+    hold on;
+    plot(w_smooth(:,jj));
+    hold off;
+end
+  [~,imax] = max(negLtrain_sm);
   hold on;
-  plot(cellSTA , '.');
+  plot(cellSTA, '-');
+  hold off;
+  hold on;
+  plot(w_smooth(:,imax), '.r');
+  
