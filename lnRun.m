@@ -70,8 +70,8 @@ dataForTesting.spikesTrain = spstest;
 % 
   opts = optimset('Gradobj','on','Hessian','on','display','iter-detailed');
   cellPostSpike = zeros(1,numOfBaseVectors);
-  learnedParameters = [cellSTA' cellPostSpike];
-  %learnedParameters = cellSTA';
+  %learnedParameters = [cellSTA' cellPostSpike];
+  learnedParameters = cellSTA';
 
 % This matrix computes differences between adjacent coeffs
 Dx1 = spdiags(ones(filterSizeBeforeSpike - 1,1)*[-1 1],0:1,filterSizeBeforeSpike-2,filterSizeBeforeSpike - 1);
@@ -89,7 +89,7 @@ negLogTest = zeros(nlam,1);  % training error
 
 %%
 %Initialize first parametets
-negLikelihhod = @(prs)Loss_GLM_logli_exp(prs,dataForLearnning); % set negative log-likelihood as loss func
+negLikelihhod = @(prs)Loss_LN_logli_exp(prs,dataForLearnning); % set negative log-likelihood as loss func
 learnedParameters = fminunc(negLikelihhod,learnedParameters,opts);
 w_smooth = zeros(length(learnedParameters),nlam); % filters for each lambda
 
@@ -102,12 +102,12 @@ for jj = 1:nlam
     wmap = learnedParameters; 
     % Compute MAP estimate
     Cinv = lamvals(jj)*D; % set inverse prior covariance
-    negLikelihhod = @(prs)Loss_GLM_logli_exp(prs,dataForLearnning); % set negative log-likelihood as loss func
-    lossfun = @(prs)glmneglogposterior(prs,negLikelihhod,Cinv, filterSizeBeforeSpike);
+    negLikelihhod = @(prs)Loss_LN_logli_exp(prs,dataForLearnning); % set negative log-likelihood as loss func
+    lossfun = @(prs)lnneglogposterior(prs,negLikelihhod,Cinv);
     learnedParameters = fminunc(lossfun,wmap,opts);
     w_smooth(:,jj) = learnedParameters;
-    negLtrain_sm(jj) = Loss_GLM_logli_exp(learnedParameters, dataForLearnning);
-    negLogTest(jj) = Loss_GLM_logli_exp(learnedParameters, dataForTesting);
+    negLtrain_sm(jj) = Loss_LN_logli_exp(learnedParameters, dataForLearnning);
+    negLogTest(jj) = Loss_LN_logli_exp(learnedParameters, dataForTesting);
     plot(learnedParameters(5:filterSizeBeforeSpike));
     xlabel('time before spike');drawnow; pause(.5);
 end
@@ -119,9 +119,9 @@ hold off;
     plot(w_smooth(5:filterSizeBeforeSpike,imin));
     hold on;
     plot(cellSTA(5:end) - mean(cellSTA));
-  spikeHistoryVector = w_smooth(end - numOfBaseVectors + 1 :end,imin)' * postSpikeBaseVectors';
+  %spikeHistoryVector = w_smooth(end - numOfBaseVectors + 1 :end,imin)' * postSpikeBaseVectors';
   subplot(4,1,2);
-  plot(spikeHistoryVector);
+  %plot(spikeHistoryVector);
   subplot(4,1,3);
   plot(-negLtrain_sm);
   subplot(4,1,4);
