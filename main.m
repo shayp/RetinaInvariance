@@ -15,7 +15,7 @@ ncells = length(SpTimes);  % number of neurons
  wantedSampFactor = 20;
  
  % We change the resolutin of the spikes and stimulus
- [scaledSpikes, scaledStimulus] = changeSpikesAndStimulusRsolution(tsp, Stim,stimtimes, wantedSampFactor);
+ [scaledSpikes, scaledStimulus, rawSpikesVector] = changeSpikesAndStimulusRsolution(tsp, Stim,stimtimes, wantedSampFactor);
  
  % We spilt the data for train and test
  lengthOfExp = length(scaledSpikes);
@@ -39,16 +39,19 @@ ncells = length(SpTimes);  % number of neurons
  % Build base vectors for post spike history
  lastPeak = 4;
  dt = 1;
- [postSpiketimeVector,postSpikeBaseVectors, originalBaseVectors] = buildBaseVectorsForPostSpikeAndCoupling(numOfBaseVectors,dt, [0.05 lastPeak], lastPeak / 2);
+ [postSpiketimeVector,postSpikeBaseVectors, originalBaseVectors] = buildBaseVectorsForPostSpikeAndCoupling(numOfBaseVectors,0.01, [.01 1], .5);
  numOfBaseVectors = size(postSpikeBaseVectors,2);
-
+figure();
+plot(postSpikeBaseVectors);
  % We build the stimulus design matrix
  stimulusDesignMatrix = buildStimulusDesignMatrix(filterSizeBeforeSpike, stimtrain);
  teststimulusDesignMatrix = buildStimulusDesignMatrix(filterSizeBeforeSpike, stimtest);
  cellSTA = calculateSTA(stimulusDesignMatrix,spstrain);
 
- spikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors, postSpikeBaseVectors, spstrain);
- testspikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors, postSpikeBaseVectors, spstest);
+
+ spikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors, postSpikeBaseVectors, length(spstrain), rawSpikesVector, wantedSampFactor);
+ testspikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors, postSpikeBaseVectors,  length(spstest), rawSpikesVector, wantedSampFactor);
+ 
  
 dataForLearnning.stimulusFiltetSize = filterSizeBeforeSpike;
 dataForLearnning.binSizeInSecond = 1 / 500 ;
@@ -97,6 +100,7 @@ w_smooth = zeros(length(learnedParameters),nlam); % filters for each lambda
 figure();
 hold on;
 plot(learnedParameters(1:filterSizeBeforeSpike));drawnow;
+wmap = learnedParameters; 
 
 for jj = 1:nlam
     wmap = learnedParameters; 
