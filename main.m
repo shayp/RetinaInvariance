@@ -19,7 +19,7 @@ ncells = length(SpTimes);  % number of neurons
  
  % We spilt the data for train and test
  lengthOfExp = length(scaledSpikes);
- trainfrac = .075;  % fraction of data to use for training
+ trainfrac = .3;  % fraction of data to use for training
  ntrain = ceil(lengthOfExp*trainfrac);  % number of training samples
  ntest = lengthOfExp - ntrain; % number of test samples
  iitest = 1:ntest; % time indices for test
@@ -45,9 +45,7 @@ ncells = length(SpTimes);  % number of neurons
  % We build the stimulus design matrix
  stimulusDesignMatrix = buildStimulusDesignMatrix(filterSizeBeforeSpike, stimtrain);
  teststimulusDesignMatrix = buildStimulusDesignMatrix(filterSizeBeforeSpike, stimtest);
- filterSizeBeforeSpike = filterSizeBeforeSpike + 1;
  cellSTA = calculateSTA(stimulusDesignMatrix,spstrain);
-% cellSTA(1)  = mean(cellSTA);
 
  spikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors, postSpikeBaseVectors, spstrain);
  testspikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors, postSpikeBaseVectors, spstest);
@@ -89,15 +87,17 @@ negLogTest = zeros(nlam,1);  % training error
 
 %%
 %Initialize first parametets
-negLikelihhod = @(prs)Loss_GLM_logli_exp(prs,dataForLearnning); % set negative log-likelihood as loss func
-learnedParameters = fminunc(negLikelihhod,learnedParameters,opts);
+negLikelihhod = @(prs)Loss_LN_logli_exp(prs,dataForLearnning); % set negative log-likelihood as loss func
+learnedParameters = fminunc(negLikelihhod,learnedParameters(1:filterSizeBeforeSpike),opts);
+learnedParameters = [learnedParameters cellPostSpike]; 
 w_smooth = zeros(length(learnedParameters),nlam); % filters for each lambda
 
 
 %%
 figure();
 hold on;
-plot(params(5:filterSizeBeforeSpike));drawnow;
+plot(learnedParameters(1:filterSizeBeforeSpike));drawnow;
+
 for jj = 1:nlam
     wmap = learnedParameters; 
     % Compute MAP estimate
@@ -108,7 +108,7 @@ for jj = 1:nlam
     w_smooth(:,jj) = learnedParameters;
     negLtrain_sm(jj) = Loss_GLM_logli_exp(learnedParameters, dataForLearnning);
     negLogTest(jj) = Loss_GLM_logli_exp(learnedParameters, dataForTesting);
-    plot(learnedParameters(5:filterSizeBeforeSpike));
+    plot(learnedParameters(1:filterSizeBeforeSpike));
     xlabel('time before spike');drawnow; pause(.5);
 end
 hold off;
@@ -116,9 +116,9 @@ hold off;
 
   [~,imin] = min(negLogTest);
     subplot(4,1,1);
-    plot(w_smooth(5:filterSizeBeforeSpike,imin));
+    plot(w_smooth(1:filterSizeBeforeSpike,imin));
     hold on;
-    plot(cellSTA(5:end) - mean(cellSTA));
+    plot(cellSTA(1:end) - mean(cellSTA));
   spikeHistoryVector = w_smooth(end - numOfBaseVectors + 1 :end,imin)' * postSpikeBaseVectors';
   subplot(4,1,2);
   plot(spikeHistoryVector);

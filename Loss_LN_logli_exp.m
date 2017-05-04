@@ -16,7 +16,6 @@ function [logli, dL, H] = Loss_LN_logli_exp(learnedParameters,dataForLearnning)
 % Extract some vals from Xstruct (Opt Prs);
 stimulusFilterSize = dataForLearnning.stimulusFiltetSize;   % total # params for k
 binSizeInSecond = dataForLearnning.binSizeInSecond;           % absolute bin size for spike train (in sec)
-
 % Unpack GLM prs;
 stimulusFilter = learnedParameters(1:stimulusFilterSize);
 spikesTrain = dataForLearnning.spikesTrain;

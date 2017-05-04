@@ -1,4 +1,4 @@
-function [logli, dL, H] = Loss_GLM_logli_exp(learnedParameters,dataForLearnning)
+function [logli, dL, H, Hk, Hkh, Hh] = Loss_GLM_logli_exp(learnedParameters,dataForLearnning)
 % [neglogli, dL, H] = Loss_GLM_logli_exp(prs)
 %(Taken from pillowLab)
 % Compute negative log-likelihood of data undr the GLM model with
@@ -25,9 +25,7 @@ spikesTrain = dataForLearnning.spikesTrain;
 % Extract some other stuff we'll use a lot
 stimulusDesignMatrix = dataForLearnning.stimulusDesignMatrix; % stimulus design matrix
 spikeHistoryDesignMatrix = dataForLearnning.spikeHistoryDesignMatrix;    % spike history design matrix
-spikesoccurence = dataForLearnning.spikesccurence;   % binary spike vector
 dataLen = dataForLearnning.dataLen;   % number of bins in spike train vector
-nsp = sum(spikesoccurence);     % number of spikes
 
 % -------- Compute sum of filter reponses -----------------------
  linearFilter = stimulusDesignMatrix*stimulusFilter' + spikeHistoryDesignMatrix * postspikehistoryFilters'; 
@@ -66,9 +64,6 @@ if (nargout > 1)
 end
  if (nargout > 2)
    ddrrdiag = spdiags(expValue, 0, dataLen, dataLen); 
-   
-   %H = stimulusDesignMatrix' * bsxfun(@times,stimulusDesignMatrix,expValue);
-
      Hk = stimulusDesignMatrix' * bsxfun(@times,stimulusDesignMatrix,expValue);
 
     %Hk = stimulusDesignMatrix' * ddrrdiag * stimulusDesignMatrix; % Hkk (k filter)
