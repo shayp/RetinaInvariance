@@ -1,4 +1,4 @@
-function [interpSpikes, interpStimulus, spikesSampleVector] = changeSpikesAndStimulusRsolution(spikes, stimulus,stimtimes, wantedSampFactor)
+function [interpSpikes, interpStimulus, spikesSampleVector, lastStimulus] = changeSpikesAndStimulusRsolution(spikes, stimulus,stimtimes, wantedSampFactor)
     endStimulus = find(stimtimes > spikes(length(spikes)));
     lastStimulus = stimtimes(endStimulus(1));
     spikesSampleVector = ismember(1:lastStimulus, spikes);
