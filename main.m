@@ -4,5 +4,5 @@ load([datdir, 'Stim']);
 load([datdir,'stimtimes']); 
 load([datdir, 'SpTimes']); 
 ncells = length(SpTimes);
-couplenNeurons = [2 3 4];
+couplenNeurons = [1];
 runGLM(1, Stim, stimtimes, SpTimes, couplenNeurons)

@@ -8,16 +8,20 @@ binsInSecond = 500;
 
 numOfCoupledNeurons = length(couplenNeurons);
 
+minLastSpike = tsp(length(tsp));
 for i = 1:numOfCoupledNeurons
     neuron(i).cellNumber = couplenNeurons(i); 
     neuron(i).spikeTimes = SpTimes(couplenNeurons(i)).sp;
+    if neuron(i).spikeTimes(length(neuron(i).spikeTimes)) < minLastSpike
+        minLastSpike = neuron(i).spikeTimes(length(neuron(i).spikeTimes));
+    end
 end
 
 % Define the wanted factor to work with dseired tempral resplution(2ms)
 wantedSampFactor = 20;
  
 % We change the resolutin of the spikes and stimulus
-[scaledSpikes, scaledStimulus, rawSpikesVector, lastStimulus] = changeSpikesAndStimulusRsolution(tsp, Stim, stimtimes, wantedSampFactor);
+[scaledSpikes, scaledStimulus, rawSpikesVector, lastStimulus] = changeSpikesAndStimulusRsolution(tsp, Stim, stimtimes, wantedSampFactor, minLastSpike);
 
 neuronRawStimulus = getNeuronsRawStimulusSeires(numOfCoupledNeurons, neuron, lastStimulus);
 
@@ -31,7 +35,7 @@ trainfrac = .3;
  
 % number of training samples
 ntrain = ceil(lengthOfExp*trainfrac);  
-nRawTrain =  ceil(lengthOfExpRaw*trainfrac)
+nRawTrain =  ceil(lengthOfExpRaw*trainfrac);
 
 % number of test samples
 ntest = lengthOfExp - ntrain; 
@@ -66,8 +70,8 @@ for i = 1:numOfCoupledNeurons
     spsCoupleddRawTest(i,:) = neuronRawStimulus(i,iiRawTest);
 end
 % Print num of spikes 
-fprintf('Taining: %d spikes', sum(spstrain));
-fprintf('Testing: %d spikes', sum(spstest));
+fprintf('Taining: %d spikes\n', sum(spstrain));
+fprintf('Testing: %d spikes\n', sum(spstest));
  
 % Define the wanted size of stimulus filter before spike
 filterSizeBeforeSpike = 200;
@@ -75,7 +79,7 @@ filterSizeBeforeSpike = 200;
 %% Post spike base vectors
 
 % Define number of base vectors for post spike filter
-numOfBaseVectors = 10;
+numOfBaseVectors = 5;
  
 % Define parameters for post spike base vectors
 lastPeak = 1;
@@ -91,7 +95,7 @@ numOfBaseVectors = size(postSpikeBaseVectors,2);
 
 % Plot base vectors
 figure();
-plot(postSpikeBaseVectors);
+plot(postSpiketimeVector,postSpikeBaseVectors);
 title('Base vectors for post spike history');
 xlabel('Time after spike');
 
@@ -131,7 +135,7 @@ dataForTesting.spikesTrain = spstest;
 opts = optimset('Gradobj','on','Hessian','on','display','iter-detailed');
 
 % Set start parameters for the optimization problem
-cellPostSpike = zeros(1,numOfBaseVectors);
+cellPostSpike = zeros(1,numOfBaseVectors *(numOfCoupledNeurons + 1));
 learnedParameters = [cellSTA' cellPostSpike];
 
 % This matrix computes differences between adjacent coeffs

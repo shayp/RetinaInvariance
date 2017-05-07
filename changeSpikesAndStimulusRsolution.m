@@ -1,5 +1,5 @@
-function [interpSpikes, interpStimulus, spikesSampleVector, lastStimulus] = changeSpikesAndStimulusRsolution(spikes, stimulus,stimtimes, wantedSampFactor)
-    endStimulus = find(stimtimes > spikes(length(spikes)));
+function [interpSpikes, interpStimulus, spikesSampleVector, lastStimulus] = changeSpikesAndStimulusRsolution(spikes, stimulus,stimtimes, wantedSampFactor, minLastSpike)
+    endStimulus = find(stimtimes > minLastSpike);
     lastStimulus = stimtimes(endStimulus(1));
     spikesSampleVector = ismember(1:lastStimulus, spikes);
     stimulusSampleVector = zeros(lastStimulus, 1);
