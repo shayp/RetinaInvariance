@@ -9,9 +9,14 @@ binsInSecond = 500;
 numOfCoupledNeurons = length(couplenNeurons);
 
 minLastSpike = tsp(length(tsp));
+
 for i = 1:numOfCoupledNeurons
+    % We p the coupled neurons in other struct for future use
     neuron(i).cellNumber = couplenNeurons(i); 
     neuron(i).spikeTimes = SpTimes(couplenNeurons(i)).sp;
+    
+    % We want to build a binary array of spikes, in the size of the minmal last
+    % spike in all neurons that we use in current GLM Run
     if neuron(i).spikeTimes(length(neuron(i).spikeTimes)) < minLastSpike
         minLastSpike = neuron(i).spikeTimes(length(neuron(i).spikeTimes));
     end
@@ -24,7 +29,6 @@ wantedSampFactor = 20;
 [scaledSpikes, scaledStimulus, rawSpikesVector, lastStimulus] = changeSpikesAndStimulusRsolution(tsp, Stim, stimtimes, wantedSampFactor, minLastSpike);
 
 neuronRawStimulus = getNeuronsRawStimulusSeires(numOfCoupledNeurons, neuron, lastStimulus);
-
 lengthOfExpRaw = length(rawSpikesVector);
 
 % We spilt the data for train and test
@@ -57,7 +61,6 @@ stimtest = scaledStimulus(iitest);
 % Train spikes
 spstrain = scaledSpikes(iitrain);
 spsRawTrain = rawSpikesVector(iiRawTrain);
-
 % Test spikes
 spstest =  scaledSpikes(iitest);
 spsRawTest = rawSpikesVector(iiRawTest);
@@ -70,9 +73,10 @@ for i = 1:numOfCoupledNeurons
     spsCoupleddRawTest(i,:) = neuronRawStimulus(i,iiRawTest);
 end
 % Print num of spikes 
-fprintf('Taining: %d spikes\n', sum(spstrain));
-fprintf('Testing: %d spikes\n', sum(spstest));
- 
+fprintf('Taining scaled: %d spikes\n', sum(spstrain));
+fprintf('Testing scaled: %d spikes\n', sum(spstest));
+fprintf('Taining raw: %d spikes\n', sum(spsRawTrain));
+fprintf('Testing raw: %d spikes\n', sum(spsRawTest));
 % Define the wanted size of stimulus filter before spike
 filterSizeBeforeSpike = 200;
  
@@ -111,6 +115,8 @@ testStimulusDesignMatrix = buildStimulusDesignMatrix(filterSizeBeforeSpike, stim
 cellSTA = calculateSTA(trainStimulusDesignMatrix,spstrain);
 
 % We build spike history design matrix
+%trainSpikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors,numOfCoupledNeurons, postSpikeBaseVectors, length(spstrain), spsRawTrain, wantedSampFactor, spsCoupleddRawTrain);
+%+testSpikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors,numOfCoupledNeurons, postSpikeBaseVectors,  length(spstest), spsRawTest, wantedSampFactor, spsCoupleddRawTest);
 trainSpikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors,numOfCoupledNeurons, postSpikeBaseVectors, length(spstrain), spsRawTrain, wantedSampFactor, spsCoupleddRawTrain);
 testSpikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors,numOfCoupledNeurons, postSpikeBaseVectors,  length(spstest), spsRawTest, wantedSampFactor, spsCoupleddRawTest);
 
@@ -124,6 +130,7 @@ dataForLearnning.stimulusDesignMatrix = trainStimulusDesignMatrix;
 dataForLearnning.spikeHistoryDesignMatrix = trainSpikeHistoryDesignMatrix';
 dataForLearnning.dataLen = length(spstrain);
 dataForLearnning.spikesTrain = spstrain;
+
 dataForTesting.stimulusFiltetSize = filterSizeBeforeSpike;
 dataForTesting.binSizeInSecond = 1 / binsInSecond ;
 dataForTesting.stimulusDesignMatrix = testStimulusDesignMatrix;
