@@ -3,9 +3,8 @@ function runGLM(neuronIndex, Stim, stimtimes, SpTimes, couplenNeurons)
 
 % set spikes var
 tsp = SpTimes(neuronIndex).sp;
- 
+%tsp = tsp(1:2000);
 binsInSecond = 500;
-
 numOfCoupledNeurons = length(couplenNeurons);
 
 minLastSpike = tsp(length(tsp));
@@ -24,7 +23,7 @@ end
 
 % Define the wanted factor to work with dseired tempral resplution(2ms)
 wantedSampFactor = 20;
- 
+
 % We change the resolutin of the spikes and stimulus
 [scaledSpikes, scaledStimulus, rawSpikesVector, lastStimulus] = changeSpikesAndStimulusRsolution(tsp, Stim, stimtimes, wantedSampFactor, minLastSpike);
 
@@ -35,23 +34,19 @@ lengthOfExpRaw = length(rawSpikesVector);
 lengthOfExp = length(scaledSpikes);
  
 % fraction of data to use for training
-trainfrac = .3;  
+trainfrac = .8;  
  
 % number of training samples
 ntrain = ceil(lengthOfExp*trainfrac);  
-nRawTrain =  ceil(lengthOfExpRaw*trainfrac);
 
 % number of test samples
 ntest = lengthOfExp - ntrain; 
-nRawtest = lengthOfExpRaw - nRawTrain;
- 
-% time indices for test
-iitest = 1:ntest;
-iiRawTest = 1:nRawtest;
- 
+
 % time indices for training
-iitrain = ntest+1:lengthOfExp;  
-iiRawTrain = nRawtest + 1:lengthOfExpRaw;
+iitrain = 1:ntrain;  
+
+% time indices for test
+iitest = ntrain + 1:lengthOfExp;
  
 % training stimulus
 stimtrain = scaledStimulus(iitrain);
@@ -60,24 +55,15 @@ stimtest = scaledStimulus(iitest);
 
 % Train spikes
 spstrain = scaledSpikes(iitrain);
-spsRawTrain = rawSpikesVector(iiRawTrain);
+
 % Test spikes
 spstest =  scaledSpikes(iitest);
-spsRawTest = rawSpikesVector(iiRawTest);
 
-spsCoupleddRawTrain = zeros(numOfCoupledNeurons, nRawTrain);
-spsCoupleddRawTest = zeros(numOfCoupledNeurons, nRawtest);
 
-for i = 1:numOfCoupledNeurons
-    spsCoupleddRawTrain(i,:) = neuronRawStimulus(i,iiRawTrain);
-    spsCoupleddRawTest(i,:) = neuronRawStimulus(i,iiRawTest);
-end
 % Print num of spikes 
 fprintf('Taining scaled: %d spikes\n', sum(spstrain));
 fprintf('Testing scaled: %d spikes\n', sum(spstest));
-fprintf('Taining raw: %d spikes\n', sum(spsRawTrain));
-fprintf('Testing raw: %d spikes\n', sum(spsRawTest));
-% Define the wanted size of stimulus filter before spike
+
 filterSizeBeforeSpike = 200;
  
 %% Post spike base vectors
@@ -97,11 +83,11 @@ b = 0.5;
 % Update the size after base vectors build(Can be changed)
 numOfBaseVectors = size(postSpikeBaseVectors,2);
 
-% Plot base vectors
-figure();
-plot(postSpiketimeVector,postSpikeBaseVectors);
-title('Base vectors for post spike history');
-xlabel('Time after spike');
+% % Plot base vectors
+% figure();
+% plot(postSpiketimeVector,postSpikeBaseVectors);
+% title('Base vectors for post spike history');
+% xlabel('Time after spike');
 
 %% Design Matrix build
 
@@ -115,10 +101,9 @@ testStimulusDesignMatrix = buildStimulusDesignMatrix(filterSizeBeforeSpike, stim
 cellSTA = calculateSTA(trainStimulusDesignMatrix,spstrain);
 
 % We build spike history design matrix
-%trainSpikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors,numOfCoupledNeurons, postSpikeBaseVectors, length(spstrain), spsRawTrain, wantedSampFactor, spsCoupleddRawTrain);
-%+testSpikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors,numOfCoupledNeurons, postSpikeBaseVectors,  length(spstest), spsRawTest, wantedSampFactor, spsCoupleddRawTest);
-trainSpikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors,numOfCoupledNeurons, postSpikeBaseVectors, length(spstrain), spsRawTrain, wantedSampFactor, spsCoupleddRawTrain);
-testSpikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors,numOfCoupledNeurons, postSpikeBaseVectors,  length(spstest), spsRawTest, wantedSampFactor, spsCoupleddRawTest);
+%trainSpikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors, numOfCoupledNeurons, postSpikeBaseVectors, length(spstrain), spsRawTrain, wantedSampFactor, spsCoupleddRawTrain);
+%testSpikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors,numOfCoupledNeurons, postSpikeBaseVectors,  length(spstest), spsRawTest, wantedSampFactor, spsCoupleddRawTest);
+[trainSpikeHistoryDesignMatrix, testSpikeHistoryDesignMatrix] = buildSpikeHistoryDesignMatrix(numOfBaseVectors, numOfCoupledNeurons, postSpikeBaseVectors, length(spstrain),length(spstest), rawSpikesVector, wantedSampFactor, neuronRawStimulus);
 
 %% Optimization problem params init
 
@@ -153,7 +138,7 @@ Dx = Dx1'*Dx1;
 
 % Select lambda smoothing penalty by cross-validation 
  % grid of lambda values (ridge parameters)
-lambdavals = 2.^(1:20);
+lambdavals = 2.^(6:14);
 nlambda = length(lambdavals);
 
 % Embed Dx matrix in matrix with one extra row/column for constant coeff
@@ -164,9 +149,12 @@ negLtrain = zeros(nlambda,1);
 negLogTest = zeros(nlambda,1);  
 lambdaLearrnedParameters = zeros(length(learnedParameters),nlambda);
 
-
 %% Run optimization problem with diffrent lambdas
+% The negative log likelihood function
+negLikelihhod = @(prs)Loss_GLM_logli_exp(prs,dataForLearnning);
 
+% Call The optimization problem solver
+learnedParameters = fminunc(negLikelihhod,learnedParameters,opts);
 figure();
 hold on;
 

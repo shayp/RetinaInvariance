@@ -22,9 +22,7 @@ spikesTrain = dataForLearnning.spikesTrain;
 
 % Extract some other stuff we'll use a lot
 stimulusDesignMatrix = dataForLearnning.stimulusDesignMatrix; % stimulus design matrix
-spikesoccurence = dataForLearnning.spikesccurence;   % binary spike vector
 dataLen = dataForLearnning.dataLen;   % number of bins in spike train vector
-nsp = sum(spikesoccurence);     % number of spikes
 
 % -------- Compute sum of filter reponses -----------------------
  linearFilter = stimulusDesignMatrix*stimulusFilter';
