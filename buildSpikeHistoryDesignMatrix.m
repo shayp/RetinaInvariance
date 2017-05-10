@@ -19,10 +19,10 @@ for i = 1:numOfBaseVectors
     
     % Squeeze the result to wanted resolution
     for j = 1:wantedLengthTrain - 1
-        trainSummedSpikes(j) = mean(convVector((j - 1) * wantedSampFactor + 1: j * wantedSampFactor));
+        trainSummedSpikes(j) = sum(convVector((j - 1) * wantedSampFactor + 1: j * wantedSampFactor));
     end
     for j = 1:wantedLengthTest - 1
-        testSummedSpikes(j) = mean(convVector(nTrainLength + (j - 1) * wantedSampFactor + 1:nTrainLength + j * wantedSampFactor));
+        testSummedSpikes(j) = sum(convVector(nTrainLength + (j - 1) * wantedSampFactor + 1:nTrainLength + j * wantedSampFactor));
     end
 
     % save the squeezed convlution vector
@@ -43,10 +43,10 @@ for k = 1:numOfCoupledNeurons
         testSummedSpikes = zeros(1,wantedLengthTest);        
         % Squeeze the result to wanted resolution
         for j = 1:wantedLengthTrain - 1
-            trainSummedSpikes(j) = mean(convVector((j - 1) * wantedSampFactor + 1: j * wantedSampFactor));
+            trainSummedSpikes(j) = sum(convVector((j - 1) * wantedSampFactor + 1: j * wantedSampFactor));
         end
         for j = 1:wantedLengthTest - 1
-            testSummedSpikes(j) = mean(convVector(nTrainLength + (j - 1) * wantedSampFactor + 1:nTrainLength + j * wantedSampFactor));
+            testSummedSpikes(j) = sum(convVector(nTrainLength + (j - 1) * wantedSampFactor + 1:nTrainLength + j * wantedSampFactor));
         end
 
         % save the squeezed convlution vector

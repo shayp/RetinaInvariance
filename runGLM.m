@@ -3,7 +3,6 @@ function runGLM(neuronIndex, Stim, stimtimes, SpTimes, couplenNeurons)
 
 % set spikes var
 tsp = SpTimes(neuronIndex).sp;
-%tsp = tsp(1:2000);
 binsInSecond = 500;
 numOfCoupledNeurons = length(couplenNeurons);
 
