@@ -36,5 +36,4 @@ ff = @(x,c,dc)(cos(max(-pi,min(pi,(x-c)*pi/dc/2)))+1)/2; % raised cosine basis v
 ihbasis = ff(repmat(nlin(iht+b), 1, numOfVectors), repmat(ctrs, nt, 1), db);
 
 % compute orthogonalized basis
-ihbas = orth(ihbasis);  
-end
+ihbas = orth(ihbasis);

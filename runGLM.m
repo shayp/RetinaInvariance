@@ -4,8 +4,11 @@ function runGLM(neuronIndex, Stim, stimtimes, SpTimes, couplenNeurons)
 % set spikes var
 tsp = SpTimes(neuronIndex).sp;
 binsInSecond = 500;
-numOfCoupledNeurons = length(couplenNeurons);
+filterSizeBeforeSpike = 200;
 
+numOfCoupledNeurons = length(couplenNeurons);
+%tsp = tsp(1:1500);
+Stim = Stim - mean(Stim);
 minLastSpike = tsp(length(tsp));
 
 for i = 1:numOfCoupledNeurons
@@ -26,7 +29,7 @@ wantedSampFactor = 20;
 % We change the resolutin of the spikes and stimulus
 [scaledSpikes, scaledStimulus, rawSpikesVector, lastStimulus] = changeSpikesAndStimulusRsolution(tsp, Stim, stimtimes, wantedSampFactor, minLastSpike);
 
-neuronRawStimulus = getNeuronsRawStimulusSeires(numOfCoupledNeurons, neuron, lastStimulus);
+[neuronRawSpikes, neuronsSclaedSpikes] = getNeuronsRawSpikesSeries(numOfCoupledNeurons, neuron, lastStimulus, wantedSampFactor, length(scaledSpikes));
 lengthOfExpRaw = length(rawSpikesVector);
 
 % We spilt the data for train and test
@@ -57,36 +60,35 @@ spstrain = scaledSpikes(iitrain);
 
 % Test spikes
 spstest =  scaledSpikes(iitest);
-
+coupledTrain = neuronsSclaedSpikes(:,iitrain);
+coupledTest = neuronsSclaedSpikes(:,iitest);
 
 % Print num of spikes 
 fprintf('Taining scaled: %d spikes\n', sum(spstrain));
 fprintf('Testing scaled: %d spikes\n', sum(spstest));
 
-filterSizeBeforeSpike = 200;
  
 %% Post spike base vectors
 
 % Define number of base vectors for post spike filter
-numOfBaseVectors = 5;
+numOfBaseVectors = 10;
  
 % Define parameters for post spike base vectors
-lastPeak = 1;
-dt = 0.01;
-hpeaks = [0.01 lastPeak];
-b = 0.5;
+lastPeak = 0.030;
+dt = 0.001;
+hpeaks = [0.001 lastPeak];
+b = 0.005;
  
 % build post spike BaseVectors
 [postSpiketimeVector,postSpikeBaseVectors, originalBaseVectors] = buildBaseVectorsForPostSpikeAndCoupling(numOfBaseVectors,dt,hpeaks, b);
- 
 % Update the size after base vectors build(Can be changed)
 numOfBaseVectors = size(postSpikeBaseVectors,2);
 
-% % Plot base vectors
+% % % Plot base vectors
 % figure();
-% plot(postSpiketimeVector,postSpikeBaseVectors);
+% plot(postSpikeBaseVectors);
 % title('Base vectors for post spike history');
-% xlabel('Time after spike');
+% xlabel('Time after spike');drawnow;
 
 %% Design Matrix build
 
@@ -102,7 +104,8 @@ cellSTA = calculateSTA(trainStimulusDesignMatrix,spstrain);
 % We build spike history design matrix
 %trainSpikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors, numOfCoupledNeurons, postSpikeBaseVectors, length(spstrain), spsRawTrain, wantedSampFactor, spsCoupleddRawTrain);
 %testSpikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors,numOfCoupledNeurons, postSpikeBaseVectors,  length(spstest), spsRawTest, wantedSampFactor, spsCoupleddRawTest);
-[trainSpikeHistoryDesignMatrix, testSpikeHistoryDesignMatrix] = buildSpikeHistoryDesignMatrix(numOfBaseVectors, numOfCoupledNeurons, postSpikeBaseVectors, length(spstrain),length(spstest), rawSpikesVector, wantedSampFactor, neuronRawStimulus);
+[trainSpikeHistoryDesignMatrix, testSpikeHistoryDesignMatrix] = buildSpikeHistoryDesignMatrix(numOfBaseVectors, numOfCoupledNeurons,...
+    postSpikeBaseVectors, length(spstrain),length(spstest),spstrain,spstest, coupledTrain, coupledTest);
 
 %% Optimization problem params init
 
@@ -137,31 +140,38 @@ Dx = Dx1'*Dx1;
 
 % Select lambda smoothing penalty by cross-validation 
  % grid of lambda values (ridge parameters)
-lambdavals = 2.^(6:14);
+lambdavals = (2).^(1:14);
 nlambda = length(lambdavals);
 
 % Embed Dx matrix in matrix with one extra row/column for constant coeff
 D = blkdiag(0,Dx); 
 
 % Allocate space for train and test errors
-negLtrain = zeros(nlambda,1); 
+negLogTrain = zeros(nlambda,1); 
 negLogTest = zeros(nlambda,1);  
 lambdaLearrnedParameters = zeros(length(learnedParameters),nlambda);
 
 %% Run optimization problem with diffrent lambdas
 % The negative log likelihood function
-negLikelihhod = @(prs)Loss_GLM_logli_exp(prs,dataForLearnning);
+negLikelihhod = @(prs)Loss_LN_logli_exp(prs,dataForLearnning);
 
 % Call The optimization problem solver
-learnedParameters = fminunc(negLikelihhod,learnedParameters,opts);
+learnedSTA = fminunc(negLikelihhod,cellSTA',opts);
+startParams = [learnedSTA cellPostSpike];
+learnedParameters = startParams;
 figure();
 hold on;
 
 % Run for each lambda, and learn the the parameters
 for i = 1:nlambda
+    i
+    % We plot the learned STA of current iteration
+    plot(learnedParameters(1:filterSizeBeforeSpike));
+    xlabel('time before spike');drawnow; pause(.5);
+    ylabel('intensity');
     
     % The cirrent entry parameters are the previous learing estimatror
-    currentEntryParameters = learnedParameters; 
+    currentEntryParameters = startParams; 
     
     % Compute the inverce covariance matrix with the current lambda
     Cinv = lambdavals(i) * D; % set inverse prior covariance
@@ -184,19 +194,16 @@ for i = 1:nlambda
     
     % We calculate the negative log likelihood value for the current
     % estimator
-    negLtrain(i) = Loss_GLM_logli_exp(learnedParameters, dataForLearnning);
+    negLogTrain(i) = Loss_GLM_logli_exp(learnedParameters, dataForLearnning);
     negLogTest(i) = Loss_GLM_logli_exp(learnedParameters, dataForTesting);
-    
-    % We plot the learned STA of current iteration
-    plot(learnedParameters(1:filterSizeBeforeSpike));
-    xlabel('time before spike');drawnow; pause(.5);
-    ylabel('intensity');
 end
 
 hold off;
 
 % Get the minimum log likelihood index
-[~,imin] = min(negLogTest);
+[~,imin] = min(negLogTest)
+[~,imintrain] = min(negLogTrain)
+
 
 % Calculate the spike history vector based on the parameters learned
 spikeHistoryVector = lambdaLearrnedParameters(end - numOfBaseVectors + 1 :end,imin)' * postSpikeBaseVectors';
@@ -225,7 +232,7 @@ ylabel('factor to fire');
 
 % Train likelihood
 subplot(4,1,3);
-plot(-negLtrain);
+plot(-negLogTrain);
 title('train likelihood');
 xlabel('lambda factor');
 ylabel('log likelihood');

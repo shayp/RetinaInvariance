@@ -31,11 +31,11 @@ dataLen = dataForLearnning.dataLen;   % number of bins in spike train vector
  linearFilter = stimulusDesignMatrix*stimulusFilter' + spikeHistoryDesignMatrix * postspikehistoryFilters'; 
  %linearFilter = stimulusDesignMatrix*stimulusFilter';
 % ---------  Compute output of nonlinearity  ------------------------
-expValue = exp(linearFilter) * binSizeInSecond;
+expValue = exp(linearFilter);
 
 % ---------  Compute log-likelihood ---------------------------------
-Trm0 = sum(expValue);  % non-spike term
-Trm1 = -1 * linearFilter' * spikesTrain; % spike term
+Trm0 = sum(expValue)* binSizeInSecond;  % non-spike term
+Trm1 =  -linearFilter' * spikesTrain; % spike term
 logli = Trm0 + Trm1;
 
 % ---------  Compute Gradient -----------------
@@ -55,21 +55,21 @@ if (nargout > 1)
     dLdSpikeHistoryFilter1 = spikeHistoryDesignMatrix' * spikesTrain;
     
     % Combine terms
-    dLdStimulusFilter = dLdStimulusFilter0  - dLdStimulusFilter1;
+    dLdStimulusFilter = dLdStimulusFilter0 * binSizeInSecond  - dLdStimulusFilter1;
     %dLdMeanFiringRate = dLdMeanFiringRate0*binSizeInSecond - dLdMeanFiringRate1;
-    dLdSpikeHistoryFilter = dLdSpikeHistoryFilter0 - dLdSpikeHistoryFilter1;
+    dLdSpikeHistoryFilter = dLdSpikeHistoryFilter0 * binSizeInSecond - dLdSpikeHistoryFilter1;
     
     dL = [dLdStimulusFilter' dLdSpikeHistoryFilter'];
     %dL = dLdStimulusFilter;
 end
  if (nargout > 2)
    ddrrdiag = spdiags(expValue, 0, dataLen, dataLen); 
-     Hk = stimulusDesignMatrix' * bsxfun(@times,stimulusDesignMatrix,expValue);
+     Hk = stimulusDesignMatrix' * bsxfun(@times,stimulusDesignMatrix,expValue) * binSizeInSecond;
 
     %Hk = stimulusDesignMatrix' * ddrrdiag * stimulusDesignMatrix; % Hkk (k filter)
-    Hh = spikeHistoryDesignMatrix' * bsxfun(@times,spikeHistoryDesignMatrix,expValue);  % Hh (h filter)
+    Hh = spikeHistoryDesignMatrix' * bsxfun(@times,spikeHistoryDesignMatrix,expValue) * binSizeInSecond;  % Hh (h filter)
 
-    Hkh = ((spikeHistoryDesignMatrix' * ddrrdiag) * stimulusDesignMatrix)';         % Hhk (cross-term)
+    Hkh = ((spikeHistoryDesignMatrix' * ddrrdiag) * stimulusDesignMatrix)' * binSizeInSecond;         % Hhk (cross-term)
 
     H = [[Hk Hkh]; [Hkh' Hh]];
 

@@ -1,7 +1,5 @@
 function [trainspikeHistoryDesignMatrix,testspikeHistoryDesignMatrix] = buildSpikeHistoryDesignMatrix(numOfBaseVectors, numOfCoupledNeurons,...
-    baseVectors, wantedLengthTrain, wantedLengthTest, rawSpikesVector, wantedSampFactor, coupledVectors)
-
-nTrainLength = wantedSampFactor * wantedLengthTrain;
+    baseVectors, wantedLengthTrain, wantedLengthTest, spsTrain, spsTest, coupledTrain, coupledTest)
 
 % Define the design matrix to be as the size of                                  
 % coupled neurons + 1 (predicted neron)
@@ -12,46 +10,20 @@ testspikeHistoryDesignMatrix = zeros(numOfBaseVectors * (numOfCoupledNeurons + 1
 for i = 1:numOfBaseVectors  
     % make convolution of the raw stimulus(fine resolution) with a base
     % vector
-
-    convVector = conv(rawSpikesVector, fliplr(baseVectors(:,i)'), 'same');
-    trainSummedSpikes = ones(1,wantedLengthTrain);
-    testSummedSpikes = ones(1,wantedLengthTest);
-    
-    % Squeeze the result to wanted resolution
-    for j = 1:wantedLengthTrain - 1
-        trainSummedSpikes(j) = sum(convVector((j - 1) * wantedSampFactor + 1: j * wantedSampFactor));
-    end
-    for j = 1:wantedLengthTest - 1
-        testSummedSpikes(j) = sum(convVector(nTrainLength + (j - 1) * wantedSampFactor + 1:nTrainLength + j * wantedSampFactor));
-    end
-
-    % save the squeezed convlution vector
-    trainspikeHistoryDesignMatrix(i,:) = trainSummedSpikes;
-    testspikeHistoryDesignMatrix(i,:) = testSummedSpikes;
-
+    %trainspikeHistoryDesignMatrix(i,:) = conv(spsTrain,(baseVectors(:,i)'), 'same');   
+    %testspikeHistoryDesignMatrix(i,:) = conv(spsTest,(baseVectors(:,i)'), 'same');
 end
 
 % calculate the  base vectors of the coupling neurons
 for k = 1:numOfCoupledNeurons
-    rawVector = coupledVectors(k,:);
+    trainVector = coupledTrain(k,:);
+    testVector = coupledTest(k,:);
     for i = 1:numOfBaseVectors
         
         % make convolution of the raw stimulus(fine resolution) with a base
         % vector
-        convVector = conv(rawVector, fliplr(baseVectors(:,i)'), 'same');
-        trainSummedSpikes = zeros(1,wantedLengthTrain);
-        testSummedSpikes = zeros(1,wantedLengthTest);        
-        % Squeeze the result to wanted resolution
-        for j = 1:wantedLengthTrain - 1
-            trainSummedSpikes(j) = sum(convVector((j - 1) * wantedSampFactor + 1: j * wantedSampFactor));
-        end
-        for j = 1:wantedLengthTest - 1
-            testSummedSpikes(j) = sum(convVector(nTrainLength + (j - 1) * wantedSampFactor + 1:nTrainLength + j * wantedSampFactor));
-        end
-
-        % save the squeezed convlution vector
-        trainspikeHistoryDesignMatrix(k * numOfBaseVectors + i,:) = trainSummedSpikes;
-        testspikeHistoryDesignMatrix(k * numOfBaseVectors + i,:) = testSummedSpikes;
+        trainspikeHistoryDesignMatrix(k * numOfBaseVectors + i,:) = conv(trainVector, (baseVectors(:,i)'), 'same');
+        testspikeHistoryDesignMatrix(k * numOfBaseVectors + i,:) = conv(testVector, (baseVectors(:,i)'), 'same');
     end 
 end
 
