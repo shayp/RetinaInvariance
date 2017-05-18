@@ -31,9 +31,8 @@ scaledRepStimulus = ShrinkRepeatStimilus(RepStimulusExtended, repeatStimulusTime
 
 %%
 
-neuron1Sim = zeros(numOfRepeats, length(scaledStimulus));
-neuron2Sim = zeros(numOfRepeats, length(scaledStimulus));
-
+neuron1Sim = zeros(numOfRepeats, length(scaledRepStimulus));
+neuron2Sim = zeros(numOfRepeats, length(scaledRepStimulus));
 load('Filters.mat');
 for j = 1:numOfRepeats
     response = RunGLMSimulation(numOfNeurons, scaledRepStimulus, Filters, stimulusFilterLength, couplingFilterLength, deltaT);
@@ -41,4 +40,4 @@ for j = 1:numOfRepeats
     neuron2Sim(j,:) = response(2,:);
 end
 
-spikeRate = CalculateCorrelatedSpikeRate(numOfRepeats, scaledRepSpikes1, neuron1Sim, 5);
+spikeRate = CalculateCorrelatedSpikeRate(numOfRepeats, scaledRepSpikes1, neuron1Sim, 1);
