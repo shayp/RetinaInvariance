@@ -1,9 +1,10 @@
-function runGLM(neuronIndex, Stim, stimtimes, SpTimes, couplenNeurons)
+function [scaledStimulus, couplingFilters, learnedSTA,deltaT] = runGLM(neuronIndex, Stim, stimtimes, SpTimes, couplenNeurons)
 %% Initlaization
 
 % set spikes var
 tsp = SpTimes(neuronIndex).sp;
 binsInSecond = 500;
+deltaT = 1 / binsInSecond;
 filterSizeBeforeSpike = 200;
 
 numOfCoupledNeurons = length(couplenNeurons);
@@ -102,10 +103,8 @@ testStimulusDesignMatrix = buildStimulusDesignMatrix(filterSizeBeforeSpike, stim
 cellSTA = calculateSTA(trainStimulusDesignMatrix,spstrain);
 
 % We build spike history design matrix
-%trainSpikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors, numOfCoupledNeurons, postSpikeBaseVectors, length(spstrain), spsRawTrain, wantedSampFactor, spsCoupleddRawTrain);
-%testSpikeHistoryDesignMatrix = buildSpikeHistoryDesignMatrix(numOfBaseVectors,numOfCoupledNeurons, postSpikeBaseVectors,  length(spstest), spsRawTest, wantedSampFactor, spsCoupleddRawTest);
 [trainSpikeHistoryDesignMatrix, testSpikeHistoryDesignMatrix] = buildSpikeHistoryDesignMatrix(numOfBaseVectors, numOfCoupledNeurons,...
-    postSpikeBaseVectors, length(spstrain),length(spstest),spstrain,spstest, coupledTrain, coupledTest);
+    postSpikeBaseVectors, length(spstrain),length(spstest), coupledTrain, coupledTest);
 
 %% Optimization problem params init
 
@@ -129,7 +128,7 @@ dataForTesting.spikesTrain = spstest;
 opts = optimset('Gradobj','on','Hessian','on','display','iter-detailed');
 
 % Set start parameters for the optimization problem
-cellPostSpike = zeros(1,numOfBaseVectors *(numOfCoupledNeurons + 1));
+cellPostSpike = zeros(1,numOfBaseVectors * numOfCoupledNeurons);
 learnedParameters = [cellSTA' cellPostSpike];
 
 % This matrix computes differences between adjacent coeffs
@@ -201,14 +200,16 @@ end
 hold off;
 
 % Get the minimum log likelihood index
-[~,imin] = min(negLogTest)
-[~,imintrain] = min(negLogTrain)
-
+[~,imin] = min(negLogTest);
 
 % Calculate the spike history vector based on the parameters learned
-spikeHistoryVector = lambdaLearrnedParameters(end - numOfBaseVectors + 1 :end,imin)' * postSpikeBaseVectors';
+spikeHistoryVector = lambdaLearrnedParameters(filterSizeBeforeSpike + 1 :filterSizeBeforeSpike + numOfBaseVectors) * postSpikeBaseVectors';
+couplingFilters = zeros(numOfCoupledNeurons, size(postSpikeBaseVectors,1));
 
-
+for neuronIndex = 1:numOfCoupledNeurons
+    couplingFilters(neuronIndex,:) = lambdaLearrnedParameters(filterSizeBeforeSpike + (neuronIndex  - 1) * numOfBaseVectors + 1 :filterSizeBeforeSpike + (neuronIndex) * numOfBaseVectors) * postSpikeBaseVectors';
+end
+learnedSTA = lambdaLearrnedParameters(1:filterSizeBeforeSpike,imin);
 %% Plot learned estimators
 
 figure();

@@ -1,0 +1,194 @@
+load SpikeTimeGaussian
+load GaussianMovieData
+
+SetGlobalVals();
+load('Global');
+% WW(:,1) - Event marker, marks important event on the screen
+% StimTime - Array that contains the start time of a new event(can be
+% reapeat or non reapet event)
+
+% number of neurons to include
+N = 251;
+lengthOfSTAFilter = 4000;
+wantedSeries = 6;
+numOfClusters = 6;
+% define array for the sta
+STAAll=zeros(lengthOfSTAFilter,N);
+
+% we find only the imortant indexes in the event marker
+importantStimIndexes = find(WW(:,1)>150);
+importantStimIndexes = importantStimIndexes(find(diff(importantStimIndexes)>10));
+
+% Find first and last indexes for the wanted seesion
+wantedSeriesFirstIndex = (globalVal.numberOfNonRepeatStimulus + globalVal.numberOfRepeatStimulus) * (wantedSeries - 1) + 1;
+wantedSeriesLastIndex = (globalVal.numberOfNonRepeatStimulus + globalVal.numberOfRepeatStimulus) * (wantedSeries);
+
+% Find start and end time for stimulus in the wanted session
+nonRepeatStimulusStartTime = StimTime(wantedSeriesFirstIndex);
+RepeatStimulusStartTime = StimTime(wantedSeriesFirstIndex + globalVal.numberOfNonRepeatStimulus);
+endOfStimlus = StimTime(wantedSeriesLastIndex);
+repeatStimulusTimes = StimTime((wantedSeriesFirstIndex + globalVal.numberOfNonRepeatStimulus: wantedSeriesLastIndex));
+repeatStimulusTimes = repeatStimulusTimes - repeatStimulusTimes(1);
+% define where the repeat stimulus starts
+repeatStimulusStartInVector = RepeatStimulusStartTime - nonRepeatStimulusStartTime;
+
+% Get only the important indexes of wanted session from the event marker
+wantedseriesWWIndexes = importantStimIndexes(wantedSeriesFirstIndex:wantedSeriesLastIndex);
+
+% Define the stimulus array
+Stimulus = zeros(2,endOfStimlus - nonRepeatStimulusStartTime); 
+
+% Run for each "small" session of stimulus
+for j = wantedSeriesFirstIndex:wantedSeriesLastIndex - 1
+    
+    % find the length for resize the stimuli in this session
+    lengthToResize = StimTime(j + 1) - StimTime(j);
+    
+    % Get current stimulus from the movie data
+    currentStimulus = WW(importantStimIndexes(j):importantStimIndexes(j + 1),3);
+    
+    % Extend the stimulus to the expiriment size
+    extendStimulus = imresize(currentStimulus, [lengthToResize 1], 'nearest');
+    
+    % Define array for the meanning od each stimulus
+    stimuliValArray = zeros(1,lengthToResize);
+    
+    % If it is non repeat stimulus we put 0, otherwise we put the repeat
+    % index
+    if (j - wantedSeriesFirstIndex < globalVal.numberOfNonRepeatStimulus)
+        stimuliValArray(1:lengthToResize) =  0;
+    else
+        stimuliValArray(1:lengthToResize) =  j - wantedSeriesFirstIndex - globalVal.numberOfNonRepeatStimulus;
+    end
+
+    
+    % Set the stimulus and the type of the stimlus
+    Stimulus(1, StimTime(j) - StimTime(wantedSeriesFirstIndex) + 1:StimTime(j + 1) - StimTime(wantedSeriesFirstIndex)) = extendStimulus;
+    Stimulus(2, StimTime(j) - StimTime(wantedSeriesFirstIndex) + 1:StimTime(j + 1) - StimTime(wantedSeriesFirstIndex)) = stimuliValArray;
+end
+
+% Now we want to take the neurons and remove spikes before and after the
+% expiriment time
+ maxSpikesNum = 0;
+
+  nonRepStimulusExtended = Stimulus(1,find(Stimulus(2,:) == 0));
+  RepStimulusExtended = Stimulus(:,find(Stimulus(2,:) ~= 0));
+%
+  nonRepstimulus = [nonRepStimulusExtended(1), nonRepStimulusExtended(find(diff(nonRepStimulusExtended(:)) ~= 0) + 1)];
+  x = ones(1,1);
+  nonRepstimulusTimes = [x, [find(diff(nonRepStimulusExtended(:)) ~= 0) + 1]'];
+  Stim = nonRepstimulus;
+  stimtimes = nonRepstimulusTimes;
+  save (['Stim'],'Stim');    
+  save (['stimtimes'],'stimtimes');    
+  save (['repeatStimulusTimes'],'repeatStimulusTimes');    
+  save (['RepStimulusExtended'],'RepStimulusExtended');    
+
+NonRepTT = TT;
+ for i = 1:N
+    NonRepTT(i).sp = NonRepTT(i).sp(find(NonRepTT(i).sp > nonRepeatStimulusStartTime + lengthOfSTAFilter));
+    NonRepTT(i).sp = NonRepTT(i).sp(find(NonRepTT(i).sp < RepeatStimulusStartTime));
+    if length(NonRepTT(i).sp) > maxSpikesNum
+        maxSpikesNum = length(NonRepTT(i).sp);
+    end
+    
+    NonRepTT(i).sp = NonRepTT(i).sp - StimTime(wantedSeriesFirstIndex);
+ end
+
+SpTimes = NonRepTT;
+  save (['SpTimes'],'SpTimes');    
+  
+  RepTT = TT;
+  
+   for i = 1:N
+    RepTT(i).sp = RepTT(i).sp(find(RepTT(i).sp > RepeatStimulusStartTime + lengthOfSTAFilter));
+    RepTT(i).sp = RepTT(i).sp(find(RepTT(i).sp < endOfStimlus));
+    if length(RepTT(i).sp) > maxSpikesNum
+        maxSpikesNum = length(RepTT(i).sp);
+    end
+    
+    RepTT(i).sp = RepTT(i).sp - StimTime(wantedSeriesFirstIndex + globalVal.numberOfNonRepeatStimulus);
+ end
+
+RepSpTimes = RepTT;
+  save (['RepSpTimes'],'RepSpTimes');    
+
+
+% STA = zeros(N, lengthOfSTAFilter);
+% % designMatrix = zeros(N,lengthOfSTAFilter,maxSpikesNum);
+% % for i=1:N
+% %     for spikeIndex = 1:length(TT(i).sp);
+% %         designMatrix(i,1:lengthOfSTAFilter,spikeIndex) = Stimulus(1, TT(i).sp(spikeIndex) - lengthOfSTAFilter:TT(i).sp(spikeIndex) - 1);
+% %     end
+% %     %sum(designMatrix, 2)
+% %    STA(i,1:lengthOfSTAFilter) = sum(designMatrix(i, :, :),3);
+% % end
+% 
+%  for i=1:N
+%     for spikeIndex = 1:length(TT(i).sp);
+%         STA(i,:) = STA(i,:) + Stimulus(1, TT(i).sp(spikeIndex) - lengthOfSTAFilter:TT(i).sp(spikeIndex) - 1);
+%     end
+%     STA(i,:) = STA(i,:) / length(TT(i).sp);
+%     STA(i,:) = STA(i,:) - mean(STA(i,:));
+%     %STA(i,:) = STA(i,:) / max(abs(STA(i,:)));
+%  end
+%  
+%  
+% Removelist = [192,161,141,59];
+% STA(Removelist(1:end),:) = [];
+% T = clusterdata(STA, 'linkage', 'average','maxclust', numOfClusters);
+% clusturedSTA = zeros(numOfClusters, lengthOfSTAFilter);
+% clusterCount = zeros(numOfClusters,1);
+% 
+% ttk = (-lengthOfSTAFilter+1:0) / 10000;
+% figure();
+%  curveColors = char({'yellow', 'red', 'magenta','green','cyan', 'black'});
+%  size(STA,1)
+% for i=1:size(STA,1);
+%     [i i + length(find(Removelist(:) < i))  T(i)]
+%     hold on;
+%     tmp = STA(i,:);
+%     clusturedSTA(T(i),1:lengthOfSTAFilter) = clusturedSTA(T(i),1:lengthOfSTAFilter) + tmp;
+%     clusterCount(T(i)) = clusterCount(T(i)) + 1;
+%     subplot(2,1,1);
+%     
+%     title('Clustered neurons');
+%     xlabel('Time Before Spilke (s)');
+%     ylabel('STA');
+%     plot(ttk,tmp,curveColors(T(i)),'LineWidth',1);
+% 
+%     hold off;
+% end
+% clusterCount
+% for i=1:numOfClusters
+%     hold on;
+%     if clusterCount(i) ~= 0
+%     clusturedSTA(i,:) = clusturedSTA(i,:) / clusterCount(i);
+%     subplot(2,1,2);
+%     title('Mean of Clustered neurons');
+%     xlabel('Time Before Spilke (s)');
+%     ylabel('STA');
+%     plot(ttk,clusturedSTA(i,:),curveColors(i),'DisplayName',['cluster ' num2str(i) ' - ' num2str(clusterCount(i)) ' neurons'],'LineWidth',1);
+%     end
+%     hold off;
+% end
+% legend('show')
+% 
+%     postSpikeFilter = 150;
+%     postSpikeAVg = zeros(N,postSpikeFilter + 1);
+% for i=1:1
+%     numOfSpikes = length(TT(i).sp);
+%     currentSpikesVector = ismember( 1:TT(i).sp(numOfSpikes),TT(i).sp);
+%     for j=1:numOfSpikes
+%         if TT(i).sp(j) < TT(i).sp(numOfSpikes) - postSpikeFilter
+% 
+%             length(TT(i).sp(j) + 1:TT(i).sp(j)  + postSpikeFilter)
+%             length(postSpikeAVg(i,2:end))
+%             postSpikeAVg(i,2:end) = postSpikeAVg(i,2:end) + currentSpikesVector(TT(i).sp(j) + 1:TT(i).sp(j)  + postSpikeFilter);
+%             postSpikeAVg(i,1) = postSpikeAVg(i,1) + 1;
+%         end
+%     end
+%     %postSpikeAVg(i,2:end) = postSpikeAVg(i,2:end) / postSpikeAVg(i,1);
+% end
+% figure();
+% plot(postSpikeAVg(1,2:end) / max(postSpikeAVg(1,2:end)));
