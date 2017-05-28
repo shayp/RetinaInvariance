@@ -170,7 +170,7 @@ for i = 1:nlambda
     ylabel('intensity');
     
     % The cirrent entry parameters are the previous learing estimatror
-    currentEntryParameters = startParams; 
+    currentEntryParameters = learnedParameters; 
     
     % Compute the inverce covariance matrix with the current lambda
     Cinv = lambdavals(i) * D; % set inverse prior covariance
@@ -216,7 +216,7 @@ figure();
 
 % Plot STA estimator
 subplot(4,1,1);
-plot(lambdaLearrnedParameters(1:filterSizeBeforeSpike,imin));
+plot(lambdaLearrnedParameters(2:filterSizeBeforeSpike,imin));
 hold on;
 plot(cellSTA(1:end) - mean(cellSTA));
 legend('learned STA','Expiriment STA');

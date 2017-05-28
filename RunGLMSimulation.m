@@ -8,17 +8,16 @@ nCount = 0;
 for neuronIndex = 1:numOfNeurons
     projectedStimulus(neuronIndex, stimulusFilterLength + 1:end) = conv(Stimulus, Filters(neuronIndex).StimulusFilter, 'same');
 end
-for i = maxFilterLength:simulationLength
+for i = maxFilterLength + 1:simulationLength
     for neuronIndex = 1:numOfNeurons
 
         projectionTrm = projectedStimulus(neuronIndex,i);
         for couplingIndex = 1:numOfNeurons
-            projectionTrm = projectionTrm + sum(Filters(neuronIndex).couplingFilters(couplingIndex,:) .* response(couplingIndex, i - couplingFilterLength:i - 1));
+            projectionTrm = projectionTrm + Filters(neuronIndex).couplingFilters(couplingIndex,:) * response(couplingIndex, i - couplingFilterLength:i - 1)';
         end
         curentLambda = exp(projectionTrm) * deltaT;
-        
         sample = poissrnd(curentLambda);
-        if sample >= 1
+        if sample > 1
             nCount  = nCount + 1;
             sample = 1;
         end
@@ -26,5 +25,6 @@ for i = maxFilterLength:simulationLength
         
     end
 end
+
 response = response(:,maxFilterLength + 1:end);
 end

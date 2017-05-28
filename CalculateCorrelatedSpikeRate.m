@@ -9,7 +9,8 @@ for j = 1:spikeRateLength - 1
     spikeRate(2,j) = spikeRate(2,j) + sum(simulatedNeuronData(k, (j-1) * windowSize + 1: j * windowSize));
     end
 end
-
+sum(spikeRate(1,:))
+sum(spikeRate(2,:))
 spikeRate = spikeRate / (windowSize * numOfRepeats);
-
+numOfRepeats
 correlation = corr2(spikeRate(1,:),spikeRate(2,:))
