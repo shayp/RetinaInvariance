@@ -1,4 +1,4 @@
-function [scaledStimulus, couplingFilters, learnedSTA,deltaT] = runGLM(neuronIndex, Stim, stimtimes, SpTimes, couplenNeurons)
+function [scaledStimulus, couplingFilters, learnedSTA,deltaT, meanFiringRate] = runGLM(neuronIndex, Stim, stimtimes, SpTimes, couplenNeurons)
 %% Initlaization
 
 % set spikes var
@@ -129,7 +129,8 @@ opts = optimset('Gradobj','on','Hessian','on','display','iter-detailed');
 
 % Set start parameters for the optimization problem
 cellPostSpike = zeros(1,numOfBaseVectors * numOfCoupledNeurons);
-learnedParameters = [cellSTA' cellPostSpike];
+meanFiringRate = 0;
+learnedParameters = [cellSTA' cellPostSpike meanFiringRate];
 
 % This matrix computes differences between adjacent coeffs
 Dx1 = spdiags(ones(filterSizeBeforeSpike - 1,1)*[-1 1],0:1,filterSizeBeforeSpike-2,filterSizeBeforeSpike - 1);
@@ -139,7 +140,7 @@ Dx = Dx1'*Dx1;
 
 % Select lambda smoothing penalty by cross-validation 
  % grid of lambda values (ridge parameters)
-lambdavals = (2).^(1:14);
+lambdavals = (2).^(6:15);
 nlambda = length(lambdavals);
 
 % Embed Dx matrix in matrix with one extra row/column for constant coeff
@@ -152,11 +153,11 @@ lambdaLearrnedParameters = zeros(length(learnedParameters),nlambda);
 
 %% Run optimization problem with diffrent lambdas
 % The negative log likelihood function
-negLikelihhod = @(prs)Loss_LN_logli_exp(prs,dataForLearnning);
-
-% Call The optimization problem solver
-learnedSTA = fminunc(negLikelihhod,cellSTA',opts);
-startParams = [learnedSTA cellPostSpike];
+% negLikelihhod = @(prs)Loss_LN_logli_exp(prs,dataForLearnning);
+% 
+% % Call The optimization problem solver
+% learnedSTA = fminunc(negLikelihhod,cellSTA',opts);
+startParams = [cellSTA' cellPostSpike meanFiringRate];
 learnedParameters = startParams;
 figure();
 hold on;
@@ -201,22 +202,25 @@ hold off;
 
 % Get the minimum log likelihood index
 [~,imin] = min(negLogTest);
-
+choosedParams = lambdaLearrnedParameters(:,imin);
 % Calculate the spike history vector based on the parameters learned
-spikeHistoryVector = lambdaLearrnedParameters(filterSizeBeforeSpike + 1 :filterSizeBeforeSpike + numOfBaseVectors) * postSpikeBaseVectors';
+size(choosedParams(filterSizeBeforeSpike + 1 :filterSizeBeforeSpike + numOfBaseVectors))
+size(postSpikeBaseVectors')
+spikeHistoryVector = choosedParams(filterSizeBeforeSpike + 1 :filterSizeBeforeSpike + numOfBaseVectors)' * postSpikeBaseVectors';
 couplingFilters = zeros(numOfCoupledNeurons, size(postSpikeBaseVectors,1));
 
 for neuronIndex = 1:numOfCoupledNeurons
-    couplingFilters(neuronIndex,:) = lambdaLearrnedParameters(filterSizeBeforeSpike + (neuronIndex  - 1) * numOfBaseVectors + 1 :filterSizeBeforeSpike + (neuronIndex) * numOfBaseVectors) * postSpikeBaseVectors';
+    couplingFilters(neuronIndex,:) = choosedParams(filterSizeBeforeSpike + (neuronIndex  - 1) * numOfBaseVectors + 1 :filterSizeBeforeSpike + (neuronIndex) * numOfBaseVectors)' * postSpikeBaseVectors';
 end
 learnedSTA = lambdaLearrnedParameters(1:filterSizeBeforeSpike,imin);
+meanFiringRate = lambdaLearrnedParameters(end,imin);
 %% Plot learned estimators
 
 figure();
 
 % Plot STA estimator
 subplot(4,1,1);
-plot(lambdaLearrnedParameters(2:filterSizeBeforeSpike,imin));
+plot(lambdaLearrnedParameters(1:filterSizeBeforeSpike,imin));
 hold on;
 plot(cellSTA(1:end) - mean(cellSTA));
 legend('learned STA','Expiriment STA');

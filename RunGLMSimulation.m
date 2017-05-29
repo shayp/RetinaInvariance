@@ -11,7 +11,7 @@ end
 for i = maxFilterLength + 1:simulationLength
     for neuronIndex = 1:numOfNeurons
 
-        projectionTrm = projectedStimulus(neuronIndex,i);
+        projectionTrm = projectedStimulus(neuronIndex,i)+ Filters(neuronIndex).meanFiringRate;
         for couplingIndex = 1:numOfNeurons
             projectionTrm = projectionTrm + Filters(neuronIndex).couplingFilters(couplingIndex,:) * response(couplingIndex, i - couplingFilterLength:i - 1)';
         end
