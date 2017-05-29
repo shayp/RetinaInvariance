@@ -15,7 +15,7 @@ function [negLP,grad,H] = glmneglogposterior(prs,negloglifun,Cinv, linearFilterL
 %      H [d x d] - Hessian (second deriv matrix)
 
 % Compute negative log-posterior by adding quadratic penalty to log-likelihood
-prs(1) = 0;
+
 linearFilter = prs(1:linearFilterLength);
 switch nargout
         
