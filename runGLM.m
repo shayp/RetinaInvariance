@@ -1,4 +1,4 @@
-function [scaledStimulus, couplingFilters, learnedSTA,deltaT, meanFiringRate] = runGLM(neuronIndex, Stim, stimtimes, SpTimes, couplenNeurons)
+function [scaledStimulus, couplingFilters, learnedSTA, deltaT, meanFiringRate] = runGLM(neuronIndex, Stim, stimtimes, SpTimes, couplenNeurons)
 %% Initlaization
 
 % set spikes var
@@ -37,7 +37,7 @@ lengthOfExpRaw = length(rawSpikesVector);
 lengthOfExp = length(scaledSpikes);
  
 % fraction of data to use for training
-trainfrac = .8;  
+trainfrac = .3;  
  
 % number of training samples
 ntrain = ceil(lengthOfExp*trainfrac);  
@@ -101,7 +101,6 @@ testStimulusDesignMatrix = buildStimulusDesignMatrix(filterSizeBeforeSpike, stim
 
 % We calculate the cell STA(With no zero-mean)
 cellSTA = calculateSTA(trainStimulusDesignMatrix,spstrain);
-
 % We build spike history design matrix
 [trainSpikeHistoryDesignMatrix, testSpikeHistoryDesignMatrix] = buildSpikeHistoryDesignMatrix(numOfBaseVectors, numOfCoupledNeurons,...
     postSpikeBaseVectors, length(spstrain),length(spstest), coupledTrain, coupledTest);
@@ -129,18 +128,18 @@ opts = optimset('Gradobj','on','Hessian','on','display','iter-detailed');
 
 % Set start parameters for the optimization problem
 cellPostSpike = zeros(1,numOfBaseVectors * numOfCoupledNeurons);
-meanFiringRate = 0;
+meanFiringRate = 4;
 learnedParameters = [cellSTA' cellPostSpike meanFiringRate];
 
 % This matrix computes differences between adjacent coeffs
-Dx1 = spdiags(ones(filterSizeBeforeSpike - 1,1)*[-1 1],0:1,filterSizeBeforeSpike-2,filterSizeBeforeSpike - 1);
+Dx1 = spdiags(ones(filterSizeBeforeSpike,1)*[-1 1],0:1,filterSizeBeforeSpike - 1,filterSizeBeforeSpike - 1);
 
 % computes squared diffs(in order to get (w1 - w2).^2 penalty
 Dx = Dx1'*Dx1; 
 
 % Select lambda smoothing penalty by cross-validation 
  % grid of lambda values (ridge parameters)
-lambdavals = (2).^(6:15);
+lambdavals = (2).^(7:18);
 nlambda = length(lambdavals);
 
 % Embed Dx matrix in matrix with one extra row/column for constant coeff
@@ -150,13 +149,10 @@ D = blkdiag(0,Dx);
 negLogTrain = zeros(nlambda,1); 
 negLogTest = zeros(nlambda,1);  
 lambdaLearrnedParameters = zeros(length(learnedParameters),nlambda);
+meanFiringRateArray = zeros(1,nlambda);
 
 %% Run optimization problem with diffrent lambdas
-% The negative log likelihood function
-% negLikelihhod = @(prs)Loss_LN_logli_exp(prs,dataForLearnning);
-% 
-% % Call The optimization problem solver
-% learnedSTA = fminunc(negLikelihhod,cellSTA',opts);
+
 startParams = [cellSTA' cellPostSpike meanFiringRate];
 learnedParameters = startParams;
 figure();
@@ -196,6 +192,7 @@ for i = 1:nlambda
     % estimator
     negLogTrain(i) = Loss_GLM_logli_exp(learnedParameters, dataForLearnning);
     negLogTest(i) = Loss_GLM_logli_exp(learnedParameters, dataForTesting);
+    meanFiringRateArray(i) = learnedParameters(end);
 end
 
 hold off;
@@ -203,9 +200,8 @@ hold off;
 % Get the minimum log likelihood index
 [~,imin] = min(negLogTest);
 choosedParams = lambdaLearrnedParameters(:,imin);
+
 % Calculate the spike history vector based on the parameters learned
-size(choosedParams(filterSizeBeforeSpike + 1 :filterSizeBeforeSpike + numOfBaseVectors))
-size(postSpikeBaseVectors')
 spikeHistoryVector = choosedParams(filterSizeBeforeSpike + 1 :filterSizeBeforeSpike + numOfBaseVectors)' * postSpikeBaseVectors';
 couplingFilters = zeros(numOfCoupledNeurons, size(postSpikeBaseVectors,1));
 
@@ -219,7 +215,7 @@ meanFiringRate = lambdaLearrnedParameters(end,imin);
 figure();
 
 % Plot STA estimator
-subplot(4,1,1);
+subplot(5,1,1);
 plot(lambdaLearrnedParameters(1:filterSizeBeforeSpike,imin));
 hold on;
 plot(cellSTA(1:end) - mean(cellSTA));
@@ -229,23 +225,28 @@ ylabel('intensity');
 title('STA estimatror');
 
 % Plot leaned spike history filter
-subplot(4,1,2);
+subplot(5,1,2);
 plot(spikeHistoryVector);
 title('Spike history filter');
 xlabel('Time after spike spike');
 ylabel('factor to fire');
 
 % Train likelihood
-subplot(4,1,3);
+subplot(5,1,3);
 plot(-negLogTrain);
 title('train likelihood');
 xlabel('lambda factor');
 ylabel('log likelihood');
 
 % Test likelihood
-subplot(4,1,4);
+subplot(5,1,4);
 plot(-negLogTest);
 title('test likelihood');
 xlabel('lambda factor');
 ylabel('log likelihood');
+subplot(5,1,5);
+plot(meanFiringRateArray);
+title('mean firing rate');
+xlabel('lambda factor');
+ylabel('mean firing rate');
 end

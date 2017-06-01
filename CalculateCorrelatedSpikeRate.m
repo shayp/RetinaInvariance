@@ -1,7 +1,6 @@
 function spikeRate = CalculateCorrelatedSpikeRate(numOfRepeats, realNeuronData, simulatedNeuronData, windowSize)
 dataLength = size(realNeuronData,2);
 spikeRateLength = ceil(dataLength / windowSize);
-
 spikeRate = zeros(2, spikeRateLength);
 for j = 1:spikeRateLength - 1
     for k = 1:numOfRepeats
@@ -12,5 +11,4 @@ end
 sum(spikeRate(1,:))
 sum(spikeRate(2,:))
 spikeRate = spikeRate / (windowSize * numOfRepeats);
-numOfRepeats
 correlation = corr2(spikeRate(1,:),spikeRate(2,:))

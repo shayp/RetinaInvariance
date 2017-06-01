@@ -10,11 +10,13 @@ for neuronIndex = 1:numOfNeurons
 end
 for i = maxFilterLength + 1:simulationLength
     for neuronIndex = 1:numOfNeurons
-
-        projectionTrm = projectedStimulus(neuronIndex,i)+ Filters(neuronIndex).meanFiringRate;
-        for couplingIndex = 1:numOfNeurons
-            projectionTrm = projectionTrm + Filters(neuronIndex).couplingFilters(couplingIndex,:) * response(couplingIndex, i - couplingFilterLength:i - 1)';
+        if Filters(neuronIndex).meanFiringRate < 0
+            Filters(neuronIndex).meanFiringRate = 0;
         end
+        projectionTrm = projectedStimulus(neuronIndex,i)+ Filters(neuronIndex).meanFiringRate;
+%         for couplingIndex = 1:numOfNeurons
+%             projectionTrm = projectionTrm + Filters(neuronIndex).couplingFilters(couplingIndex,:) * response(couplingIndex, i - couplingFilterLength:i - 1)';
+%         end
         curentLambda = exp(projectionTrm) * deltaT;
         sample = poissrnd(curentLambda);
         if sample > 1
@@ -25,6 +27,6 @@ for i = maxFilterLength + 1:simulationLength
         
     end
 end
-
 response = response(:,maxFilterLength + 1:end);
+
 end
