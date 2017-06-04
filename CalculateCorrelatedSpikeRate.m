@@ -10,5 +10,6 @@ for j = 1:spikeRateLength - 1
 end
 sum(spikeRate(1,:))
 sum(spikeRate(2,:))
+spikeRate(1,:) = circshift(spikeRate(1,:)',1)';
 spikeRate = spikeRate / (windowSize * numOfRepeats);
 correlation = corr2(spikeRate(1,:),spikeRate(2,:))

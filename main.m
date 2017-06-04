@@ -9,19 +9,19 @@ load ('RepStimulusExtended');
 load ('RepSpTimes');    
 ncells = length(SpTimes);
 numOfRepeats = length(repeatStimulusTimes);
-couplenNeurons = [1 2];
+couplenNeurons = [1 8];
 numOfNeurons = 2;
 wantedSampleFactor = 20;
 %%
 [scaledStimulus, couplingFilters, learnedSTA, deltaT, meanFiringRate] = runGLM(couplenNeurons(1), Stim, stimtimes, SpTimes, couplenNeurons);
-stimulusFilterLength = length(learnedSTA);
+stimulusFilterLength = length(learnedSTA); - 1;
 couplingFilterLength = size(couplingFilters,2);
-Filters(1).StimulusFilter = learnedSTA;
+Filters(1).StimulusFilter = learnedSTA(2:end);
 Filters(1).couplingFilters = couplingFilters;
 Filters(1).meanFiringRate = meanFiringRate;
 
 [scaledStimulus, couplingFilters, learnedSTA, deltaT, meanFiringRate] = runGLM(couplenNeurons(2), Stim, stimtimes, SpTimes, couplenNeurons);
-Filters(2).StimulusFilter = learnedSTA;
+Filters(2).StimulusFilter = learnedSTA(2:end);
 Filters(2).couplingFilters = couplingFilters;
 Filters(2).meanFiringRate = meanFiringRate;
 
@@ -50,7 +50,7 @@ scaledRepStimulusCut = scaledRepStimulus(stimulusFilterLength + 1:end - stimulus
 scaledRepSpikes1Cut = scaledRepSpikes1(:,stimulusFilterLength + 1:end - stimulusFilterLength);
 scaledRepSpikes2Cut = scaledRepSpikes2(:,stimulusFilterLength + 1:end - stimulusFilterLength);
 
-spikeRate = CalculateCorrelatedSpikeRate(numOfRepeats, scaledRepSpikes1Cut, neuron1SimCut, 20);
+spikeRate = CalculateCorrelatedSpikeRate(numOfRepeats, scaledRepSpikes1Cut, neuron1SimCut, 40);
 lengthOfRepeat = size(spikeRate,2);
 figure();
 plot(1:lengthOfRepeat, spikeRate(1,:), 1:lengthOfRepeat, spikeRate(2,:));

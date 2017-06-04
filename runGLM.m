@@ -8,7 +8,6 @@ deltaT = 1 / binsInSecond;
 filterSizeBeforeSpike = 200;
 
 numOfCoupledNeurons = length(couplenNeurons);
-%tsp = tsp(1:1500);
 Stim = Stim - mean(Stim);
 minLastSpike = tsp(length(tsp));
 
@@ -37,7 +36,7 @@ lengthOfExpRaw = length(rawSpikesVector);
 lengthOfExp = length(scaledSpikes);
  
 % fraction of data to use for training
-trainfrac = .3;  
+trainfrac = .9;  
  
 % number of training samples
 ntrain = ceil(lengthOfExp*trainfrac);  
@@ -72,7 +71,7 @@ fprintf('Testing scaled: %d spikes\n', sum(spstest));
 %% Post spike base vectors
 
 % Define number of base vectors for post spike filter
-numOfBaseVectors = 10;
+numOfBaseVectors = 4;
  
 % Define parameters for post spike base vectors
 lastPeak = 0.030;
@@ -90,7 +89,6 @@ numOfBaseVectors = size(postSpikeBaseVectors,2);
 % plot(postSpikeBaseVectors);
 % title('Base vectors for post spike history');
 % xlabel('Time after spike');drawnow;
-
 %% Design Matrix build
 
 % We build the stimulus design matrix for train data
@@ -127,7 +125,7 @@ dataForTesting.spikesTrain = spstest;
 opts = optimset('Gradobj','on','Hessian','on','display','iter-detailed');
 
 % Set start parameters for the optimization problem
-cellPostSpike = zeros(1,numOfBaseVectors * numOfCoupledNeurons);
+cellPostSpike =  0.01 * rand(1,numOfBaseVectors * numOfCoupledNeurons);
 meanFiringRate = 4;
 learnedParameters = [cellSTA' cellPostSpike meanFiringRate];
 
@@ -139,7 +137,7 @@ Dx = Dx1'*Dx1;
 
 % Select lambda smoothing penalty by cross-validation 
  % grid of lambda values (ridge parameters)
-lambdavals = (2).^(7:18);
+lambdavals = (2).^(8:18);
 nlambda = length(lambdavals);
 
 % Embed Dx matrix in matrix with one extra row/column for constant coeff
@@ -162,7 +160,7 @@ hold on;
 for i = 1:nlambda
     i
     % We plot the learned STA of current iteration
-    plot(learnedParameters(1:filterSizeBeforeSpike));
+    plot(learnedParameters(2:filterSizeBeforeSpike));
     xlabel('time before spike');drawnow; pause(.5);
     ylabel('intensity');
     
@@ -215,38 +213,46 @@ meanFiringRate = lambdaLearrnedParameters(end,imin);
 figure();
 
 % Plot STA estimator
-subplot(5,1,1);
-plot(lambdaLearrnedParameters(1:filterSizeBeforeSpike,imin));
+subplot(3,2,1);
+plot(lambdaLearrnedParameters(2:filterSizeBeforeSpike,imin));
 hold on;
-plot(cellSTA(1:end) - mean(cellSTA));
+plot(cellSTA(2:end));
 legend('learned STA','Expiriment STA');
 xlabel('Time before spike');
 ylabel('intensity');
 title('STA estimatror');
 
+subplot(3,2,2);
+plot(meanFiringRateArray);
+title('mean firing rate');
+xlabel('lambda factor');
+ylabel('mean firing rate');
+
 % Plot leaned spike history filter
-subplot(5,1,2);
-plot(spikeHistoryVector);
-title('Spike history filter');
+subplot(3,2,3);
+plot(couplingFilters(1,:));
+title('coupling filter');
+xlabel('Time after spike spike');
+ylabel('factor to fire');
+
+% Plot leaned spike history filter
+subplot(3,2,4);
+plot(couplingFilters(2,:));
+title('coupling filter');
 xlabel('Time after spike spike');
 ylabel('factor to fire');
 
 % Train likelihood
-subplot(5,1,3);
+subplot(3,2,5);
 plot(-negLogTrain);
 title('train likelihood');
 xlabel('lambda factor');
 ylabel('log likelihood');
 
 % Test likelihood
-subplot(5,1,4);
+subplot(3,2,6);
 plot(-negLogTest);
 title('test likelihood');
 xlabel('lambda factor');
 ylabel('log likelihood');
-subplot(5,1,5);
-plot(meanFiringRateArray);
-title('mean firing rate');
-xlabel('lambda factor');
-ylabel('mean firing rate');
 end

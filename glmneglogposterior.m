@@ -32,9 +32,7 @@ switch nargout
         [negLP,grad,H, Hk, Hkb, Hkh, Hb, Hhb, Hh] = negloglifun(prs);
         negLP = negloglifun(prs)  + .5 * linearFilter * Cinv * linearFilter';
         grad(1:linearFilterLength) = grad(1:linearFilterLength)  + (Cinv * linearFilter')';
-        grad(1) = 0;
         Hk = Hk + Cinv;
-        Hk(1,1) = 0;
         H = [[Hk Hkb Hkh]; [Hkb' Hb Hhb']; [Hkh' Hhb Hh]];
 end
 
