@@ -1,64 +1,52 @@
 function response = RunGLMSimulation(numOfNeurons, Stimulus, Filters, stimulusFilterLength, couplingFilterLength,deltaT)
-
 maxFilterLength = max(stimulusFilterLength, couplingFilterLength);
 simulationLength = length(Stimulus);
 response = zeros(numOfNeurons, simulationLength + maxFilterLength);
-projectedStimulus = zeros(numOfNeurons, simulationLength + maxFilterLength);
+linearValue = zeros(numOfNeurons, simulationLength + maxFilterLength);
 nCount = 0;
 nbinsPerEval = 100;  % Default number of bins to update for each spike
 
 for neuronIndex = 1:numOfNeurons
-%     if Filters(neuronIndex).meanFiringRate < 0
-%         Filters(neuronIndex).meanFiringRate = 0;
-%     end
-    projectedStimulus(neuronIndex, stimulusFilterLength + 1:end) = conv(Stimulus, Filters(neuronIndex).StimulusFilter, 'same');
-    projectedStimulus(neuronIndex,:) = projectedStimulus(neuronIndex,:) + Filters(neuronIndex).meanFiringRate;
+    linearValue(neuronIndex, stimulusFilterLength + 1:end) = conv(Stimulus, Filters(neuronIndex).StimulusFilter, 'same');
+    linearValue(neuronIndex,:) = linearValue(neuronIndex,:) + Filters(neuronIndex).meanFiringRate;
 end
 
-rprev = 0;
-nsp = 0;
-tspnext = exprnd(1);  % time of next spike (in rescaled time)
+rprev = zeros(1,numOfNeurons);
+nsp = zeros(1,numOfNeurons);
+tspnext = exprnd(1,1,numOfNeurons);
 
 currentBin= maxFilterLength + 1;
-% while currentBin <= simulationLength
-%     iinxt = currentBin:min(currentBin+nbinsPerEval-1,simulationLength);
-%     rrnxt = exp(projectedStimulus(1,iinxt)) * deltaT; % Cond Intensity
-%     rrcum = cumsum(rrnxt)+ rprev; % integrated cond intensity
-%     if (tspnext >= rrcum(end)) % No spike in this window
-%         currentBin = iinxt(end)+1;
-%         rprev = rrcum(end);
-%     else   % Spike!
-%         ispk = iinxt(find(rrcum>=tspnext, 1, 'first')); % time bin where spike occurred
-%         nsp = nsp+1;
-%         response(1,ispk) = 1; % spike time
-%          mxi = min(simulationLength, ispk+couplingFilterLength); % max time affected by post-spike kernel
-%          iiPostSpk = ispk+1:mxi; % time bins affected by post-spike kernel
-%         projectedStimulus(1,iiPostSpk) = projectedStimulus(1,iiPostSpk)+  Filters(1).couplingFilters(1,mxi-ispk);
-% %         end
-%         tspnext = exprnd(1);  % draw next spike time
-%         rprev = 0; % reset integrated intensity
-%         currentBin = ispk+1;  % Move to next bin
-%         % --  Update # of samples per iter ---
-%         muISI = currentBin/nsp;
-%         nbinsPerEval = max(20, round(1.5*muISI)); 
-%     end
-% end
-for i = maxFilterLength + 1:simulationLength
-    for neuronIndex = 1:numOfNeurons
-        projectionTrm = projectedStimulus(neuronIndex,i);
-        for couplingIndex = 1:numOfNeurons
-            projectionTrm = projectionTrm + Filters(neuronIndex).couplingFilters(couplingIndex,:) * response(couplingIndex, i - couplingFilterLength:i - 1)';
+while currentBin <= simulationLength
+    iinxt = currentBin:min(currentBin+nbinsPerEval-1,simulationLength);
+    nii = length(iinxt);  % Number of bins
+    rrnxt = exp(linearValue(:,iinxt)) * deltaT; % Cond Intensity
+    rrcum = cumsum(rrnxt'+[rprev;zeros(nii-1,numOfNeurons)],1);  % Cumulative intensity
+    if all(tspnext >= rrcum(end,:)) % No spike in this window
+            currentBin = iinxt(end)+1;
+            rprev = rrcum(end,:);
+    else % Spike!
+        [ispks,jspks] =  find(rrcum>=repmat(tspnext,nii,1));
+        spcells = unique(jspks(ispks == min(ispks))); % cell number(s)
+        ispk = iinxt(min(ispks)); % time bin of spike(s)
+        rprev = rrcum(min(ispks),:); % grab accumulated history to here
+        % Record this spike
+        mxi = min(maxFilterLength, ispk+couplingFilterLength); % determine bins for adding h current
+        iiPostSpk = ispk+1:mxi;
+         for ic = 1:length(spcells)
+            icell = spcells(ic);
+            nsp(icell) = nsp(icell)+1;
+            response(icell, ispk) = 1;
+            for i = 1:numOfNeurons
+                linearValue(i,iiPostSpk) = linearValue(i,iiPostSpk) + Filters(i).couplingFilters(icell,1:mxi-ispk);
+            end
+            rprev(icell) = 0;  % reset this cell's integral
+            tspnext(icell) = exprnd(1); % draw RV for next spike in this cell
         end
-        curentLambda = exp(projectionTrm) * deltaT;
-        sample = poissrnd(curentLambda);
-        if sample > 1
-            nCount  = nCount + 1;
-            sample = 1;
-        end
-      response(neuronIndex, i) = sample;
-        
+        currentBin = ispk+1;  % Move to next bin
+        % --  Update # of samples per iter ---
+        muISI = currentBin/(sum(nsp));
+        nbinsPerEval = max(20, round(1.5*muISI)); 
     end
 end
  response = response(:,maxFilterLength + 1:end);
-
 end

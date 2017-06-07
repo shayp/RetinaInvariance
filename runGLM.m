@@ -36,7 +36,7 @@ lengthOfExpRaw = length(rawSpikesVector);
 lengthOfExp = length(scaledSpikes);
  
 % fraction of data to use for training
-trainfrac = .9;  
+trainfrac = .2;  
  
 % number of training samples
 ntrain = ceil(lengthOfExp*trainfrac);  
@@ -99,6 +99,8 @@ testStimulusDesignMatrix = buildStimulusDesignMatrix(filterSizeBeforeSpike, stim
 
 % We calculate the cell STA(With no zero-mean)
 cellSTA = calculateSTA(trainStimulusDesignMatrix,spstrain);
+cellSTA(1) = 0;
+
 % We build spike history design matrix
 [trainSpikeHistoryDesignMatrix, testSpikeHistoryDesignMatrix] = buildSpikeHistoryDesignMatrix(numOfBaseVectors, numOfCoupledNeurons,...
     postSpikeBaseVectors, length(spstrain),length(spstest), coupledTrain, coupledTest);
@@ -137,7 +139,7 @@ Dx = Dx1'*Dx1;
 
 % Select lambda smoothing penalty by cross-validation 
  % grid of lambda values (ridge parameters)
-lambdavals = (2).^(8:18);
+lambdavals = (2).^(1:20);
 nlambda = length(lambdavals);
 
 % Embed Dx matrix in matrix with one extra row/column for constant coeff
@@ -160,7 +162,7 @@ hold on;
 for i = 1:nlambda
     i
     % We plot the learned STA of current iteration
-    plot(learnedParameters(2:filterSizeBeforeSpike));
+    plot(learnedParameters(1:filterSizeBeforeSpike));
     xlabel('time before spike');drawnow; pause(.5);
     ylabel('intensity');
     
@@ -214,9 +216,9 @@ figure();
 
 % Plot STA estimator
 subplot(3,2,1);
-plot(lambdaLearrnedParameters(2:filterSizeBeforeSpike,imin));
+plot(lambdaLearrnedParameters(1:filterSizeBeforeSpike,imin));
 hold on;
-plot(cellSTA(2:end));
+plot(cellSTA(1:end));
 legend('learned STA','Expiriment STA');
 xlabel('Time before spike');
 ylabel('intensity');
@@ -232,15 +234,15 @@ ylabel('mean firing rate');
 subplot(3,2,3);
 plot(couplingFilters(1,:));
 title('coupling filter');
-xlabel('Time after spike spike');
-ylabel('factor to fire');
+xlabel('Time after  spike');
+ylabel('Firing factor');
 
 % Plot leaned spike history filter
 subplot(3,2,4);
 plot(couplingFilters(2,:));
 title('coupling filter');
-xlabel('Time after spike spike');
-ylabel('factor to fire');
+xlabel('Time after spike');
+ylabel('Firing factor');
 
 % Train likelihood
 subplot(3,2,5);
