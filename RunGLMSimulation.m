@@ -8,18 +8,17 @@ nbinsPerEval = 100;  % Default number of bins to update for each spike
 
 for neuronIndex = 1:numOfNeurons
     linearValue(neuronIndex, stimulusFilterLength + 1:end) = conv(Stimulus, Filters(neuronIndex).StimulusFilter, 'same');
-    linearValue(neuronIndex,:) = linearValue(neuronIndex,:) + Filters(neuronIndex).meanFiringRate;
+    linearValue(neuronIndex,:) = linearValue(neuronIndex,:) + Filters(neuronIndex).meanFiringRate ;
 end
 
 rprev = zeros(1,numOfNeurons);
 nsp = zeros(1,numOfNeurons);
 tspnext = exprnd(1,1,numOfNeurons);
-
 currentBin= maxFilterLength + 1;
 while currentBin <= simulationLength
     iinxt = currentBin:min(currentBin+nbinsPerEval-1,simulationLength);
     nii = length(iinxt);  % Number of bins
-    rrnxt = exp(linearValue(:,iinxt)) * deltaT; % Cond Intensity
+    rrnxt =  exp(linearValue(:,iinxt)) * deltaT; % Cond Intensity
     rrcum = cumsum(rrnxt'+[rprev;zeros(nii-1,numOfNeurons)],1);  % Cumulative intensity
     if all(tspnext >= rrcum(end,:)) % No spike in this window
             currentBin = iinxt(end)+1;

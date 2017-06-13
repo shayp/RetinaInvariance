@@ -5,7 +5,7 @@ function [scaledStimulus, couplingFilters, learnedSTA, deltaT, meanFiringRate] =
 tsp = SpTimes(neuronIndex).sp;
 binsInSecond = 500;
 deltaT = 1 / binsInSecond;
-filterSizeBeforeSpike = 200;
+filterSizeBeforeSpike = 150;
 
 numOfCoupledNeurons = length(couplenNeurons);
 Stim = Stim - mean(Stim);
@@ -36,7 +36,7 @@ lengthOfExpRaw = length(rawSpikesVector);
 lengthOfExp = length(scaledSpikes);
  
 % fraction of data to use for training
-trainfrac = .2;  
+trainfrac = .3;  
  
 % number of training samples
 ntrain = ceil(lengthOfExp*trainfrac);  
@@ -74,8 +74,8 @@ fprintf('Testing scaled: %d spikes\n', sum(spstest));
 numOfBaseVectors = 4;
  
 % Define parameters for post spike base vectors
-lastPeak = 0.030;
-dt = 0.001;
+lastPeak = 0.040;
+dt = 0.002;
 hpeaks = [0.001 lastPeak];
 b = 0.005;
  
@@ -84,11 +84,11 @@ b = 0.005;
 % Update the size after base vectors build(Can be changed)
 numOfBaseVectors = size(postSpikeBaseVectors,2);
 
-% % % Plot base vectors
-% figure();
-% plot(postSpikeBaseVectors);
-% title('Base vectors for post spike history');
-% xlabel('Time after spike');drawnow;
+% % % % Plot base vectors
+figure();
+plot(postSpikeBaseVectors);
+title('Base vectors for post spike history');
+xlabel('Time after spike');drawnow;
 %% Design Matrix build
 
 % We build the stimulus design matrix for train data
@@ -139,7 +139,7 @@ Dx = Dx1'*Dx1;
 
 % Select lambda smoothing penalty by cross-validation 
  % grid of lambda values (ridge parameters)
-lambdavals = (2).^(1:20);
+lambdavals = (2).^(4:20);
 nlambda = length(lambdavals);
 
 % Embed Dx matrix in matrix with one extra row/column for constant coeff
@@ -237,12 +237,12 @@ title('coupling filter');
 xlabel('Time after  spike');
 ylabel('Firing factor');
 
-% Plot leaned spike history filter
-subplot(3,2,4);
-plot(couplingFilters(2,:));
-title('coupling filter');
-xlabel('Time after spike');
-ylabel('Firing factor');
+% % Plot leaned spike history filter
+% subplot(3,2,4);
+% plot(couplingFilters(2,:));
+% title('coupling filter');
+% xlabel('Time after spike');
+% ylabel('Firing factor');
 
 % Train likelihood
 subplot(3,2,5);
