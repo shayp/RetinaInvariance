@@ -3,9 +3,10 @@ function [scaledStimulus, couplingFilters, learnedSTA, deltaT, meanFiringRate] =
 
 % set spikes var
 tsp = SpTimes(neuronIndex).sp;
+tsp = tsp(1:1000);
 binsInSecond = 500;
 deltaT = 1 / binsInSecond;
-filterSizeBeforeSpike = 150;
+filterSizeBeforeSpike = 200;
 
 numOfCoupledNeurons = length(couplenNeurons);
 Stim = Stim - mean(Stim);
@@ -36,7 +37,7 @@ lengthOfExpRaw = length(rawSpikesVector);
 lengthOfExp = length(scaledSpikes);
  
 % fraction of data to use for training
-trainfrac = .3;  
+trainfrac = .4;  
  
 % number of training samples
 ntrain = ceil(lengthOfExp*trainfrac);  
@@ -71,11 +72,11 @@ fprintf('Testing scaled: %d spikes\n', sum(spstest));
 %% Post spike base vectors
 
 % Define number of base vectors for post spike filter
-numOfBaseVectors = 4;
+numOfBaseVectors = 3;
  
 % Define parameters for post spike base vectors
-lastPeak = 0.040;
-dt = 0.002;
+lastPeak = 0.010;
+dt = 0.001;
 hpeaks = [0.001 lastPeak];
 b = 0.005;
  
@@ -139,7 +140,7 @@ Dx = Dx1'*Dx1;
 
 % Select lambda smoothing penalty by cross-validation 
  % grid of lambda values (ridge parameters)
-lambdavals = (2).^(4:20);
+lambdavals = (2).^(1:20);
 nlambda = length(lambdavals);
 
 % Embed Dx matrix in matrix with one extra row/column for constant coeff

@@ -1,5 +1,6 @@
 % Load the data for GLM
 %%
+clear all;
 datdir = './';  
 load([datdir, 'Stim']);    
 load([datdir,'stimtimes']); 
@@ -8,8 +9,9 @@ load ('repeatStimulusTimes');
 load ('RepStimulusExtended');
 load ('RepSpTimes');    
 ncells = length(SpTimes);
-numOfRepeats = length(repeatStimulusTimes);
-couplenNeurons = [1];
+numOfRepeats = 400;
+choosedNeuron = randi(100)
+couplenNeurons = [choosedNeuron];
 numOfNeurons = 1;
 wantedSampleFactor = 20;
 %%
@@ -34,8 +36,8 @@ neuron2Sim = zeros(numOfRepeats, length(scaledRepStimulus));
 load('Filters.mat');
 
 for j = 1:numOfRepeats
-    %response = RunGLMSimulation(numOfNeurons, scaledRepStimulus, Filters, stimulusFilterLength, couplingFilterLength, deltaT);
-    response = runSimulationPoisson(numOfNeurons, scaledRepStimulus, Filters, stimulusFilterLength, couplingFilterLength,deltaT);
+    response = RunGLMSimulation(numOfNeurons, scaledRepStimulus, Filters, stimulusFilterLength, couplingFilterLength, deltaT);
+    %response = runSimulationPoisson(numOfNeurons, scaledRepStimulus, Filters, stimulusFilterLength, couplingFilterLength,deltaT);
     neuron1Sim(j,:) =  response(1,:);
     %neuron2Sim(j,:) =  response(2,:);
 end
@@ -50,9 +52,10 @@ scaledRepSpikes1Cut = scaledRepSpikes1(:,stimulusFilterLength + 1:end - stimulus
 [spikeRate, correlation] = CalculateCorrelatedSpikeRate(numOfRepeats, scaledRepSpikes1Cut, neuron1SimCut, 8);
 lengthOfRepeat = size(spikeRate,2);
 figure();
-plot(2* (1:lengthOfRepeat), spikeRate(1,:), 2*(1:lengthOfRepeat), spikeRate(2,:));
+plot(1:lengthOfRepeat, spikeRate(1,:), 1:lengthOfRepeat, spikeRate(2,:));
 randPoint = randi(lengthOfRepeat - 200);
-xlim([randPoint randPoint + 190]);
+%xlim([randPoint randPoint + 190]);
+xlim([1 500]);
 title(['R ' num2str(correlation)]);
 xlabel('Time (ms)');
 ylabel('Firing rate ');

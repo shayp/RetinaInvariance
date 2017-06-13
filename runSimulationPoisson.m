@@ -14,9 +14,9 @@ for i = maxFilterLength + 1:simulationLength
         sample = poissrnd(curentLambda);
         if sample >= 1
             nCount  = nCount + 1;
-            sample = 1;
+            %sample = 1;
             for couplingIndex = 1:numOfNeurons
-            projected(couplingIndex, i + 1: i + couplingFilterLength) = projected(couplingIndex, i + 1: i + couplingFilterLength) + Filters(couplingIndex).couplingFilters(neuronIndex,:);
+                projected(couplingIndex, i + 1: i + couplingFilterLength) = projected(couplingIndex, i + 1: i + couplingFilterLength) + Filters(couplingIndex).couplingFilters(neuronIndex,:);
             end
         end
       response(neuronIndex, i) = sample;
