@@ -10,7 +10,7 @@ load ('RepStimulusExtended');
 load ('RepSpTimes');    
 ncells = length(SpTimes);
 numOfRepeats = 400;
-choosedNeuron = randi(100)
+choosedNeuron = randi(1)
 couplenNeurons = [choosedNeuron];
 numOfNeurons = 1;
 wantedSampleFactor = 20;
@@ -28,7 +28,7 @@ save('Filters.mat', 'Filters', 'scaledStimulus', 'stimulusFilterLength', 'coupli
 scaledRepSpikes1 = shrinkRepeatSpikes(repeatStimulusTimes, RepSpTimes(couplenNeurons(1)).sp, wantedSampleFactor);
 %scaledRepSpikes2 = shrinkRepeatSpikes(repeatStimulusTimes, RepSpTimes(couplenNeurons(2)).sp, wantedSampleFactor);
 scaledRepStimulus = ShrinkRepeatStimilus(RepStimulusExtended, repeatStimulusTimes, wantedSampleFactor);
-
+scaledRepStimulus = scaledRepStimulus - mean(scaledRepStimulus);
 %%
 
 neuron1Sim = zeros(numOfRepeats, length(scaledRepStimulus));

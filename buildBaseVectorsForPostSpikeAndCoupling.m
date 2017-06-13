@@ -39,4 +39,4 @@ ihbasis = ff(repmat(nlin(iht+b), 1, numOfVectors), repmat(ctrs, nt, 1), db);
 ihbas = orth(ihbasis);
 
 
-%ihbas = zeros(size(ihbas,1),size(ihbas,2));
+ihbas = zeros(size(ihbas,1),size(ihbas,2));
