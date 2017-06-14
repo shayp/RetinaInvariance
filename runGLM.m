@@ -3,7 +3,7 @@ function [scaledStimulus, couplingFilters, learnedSTA, deltaT, meanFiringRate] =
 
 % set spikes var
 tsp = SpTimes(neuronIndex).sp;
-tsp = tsp(1:1000);
+tsp = tsp(1:1500);
 binsInSecond = 500;
 deltaT = 1 / binsInSecond;
 filterSizeBeforeSpike = 200;

@@ -13,8 +13,8 @@ for j = 1:spikeRateLength - 1
 end
 sum(spikeRate(1,:))
 sum(spikeRate(2,:))
-spikeRate(1,:) = circshift(spikeRate(1,:)',4)';
+spikeRate(1,:) = circshift(spikeRate(1,:)',2)';
 spikeRate(1,:) = spikeRate(1,:) / (windowSize * lengthOfExp);
 spikeRate(2,:) = spikeRate(2,:) / (windowSize * numOfRepeats);
-spikeRate(2,:) = spikeRate(2,:) * 3;
+spikeRate(2,:) = spikeRate(2,:);
 correlation = corr2(spikeRate(1,:),spikeRate(2,:))

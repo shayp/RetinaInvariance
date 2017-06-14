@@ -9,7 +9,7 @@ load ('repeatStimulusTimes');
 load ('RepStimulusExtended');
 load ('RepSpTimes');    
 ncells = length(SpTimes);
-numOfRepeats = 400;
+numOfRepeats = 200;
 choosedNeuron = randi(1)
 couplenNeurons = [choosedNeuron];
 numOfNeurons = 1;
@@ -27,10 +27,17 @@ save('Filters.mat', 'Filters', 'scaledStimulus', 'stimulusFilterLength', 'coupli
 %% Repeat stimulus
 scaledRepSpikes1 = shrinkRepeatSpikes(repeatStimulusTimes, RepSpTimes(couplenNeurons(1)).sp, wantedSampleFactor);
 %scaledRepSpikes2 = shrinkRepeatSpikes(repeatStimulusTimes, RepSpTimes(couplenNeurons(2)).sp, wantedSampleFactor);
+RepStimulusExtended = RepStimulusExtended(1,:) - mean(RepStimulusExtended(1,:));
 scaledRepStimulus = ShrinkRepeatStimilus(RepStimulusExtended, repeatStimulusTimes, wantedSampleFactor);
-scaledRepStimulus = scaledRepStimulus - mean(scaledRepStimulus);
+stimulusDesignMatrix = buildStimulusDesignMatrix(length(learnedSTA), scaledRepStimulus);
+repSTA = zeros(length(learnedSTA), 1);
+for i = 1:size(scaledRepSpikes1,1)
+repSTA = repSTA +  calculateSTA(stimulusDesignMatrix, scaledRepSpikes1(i,:)');
+end
+repSTA = repSTA / size(scaledRepSpikes1,1);
+figure();
+plot(1:length(learnedSTA), learnedSTA, 1:length(learnedSTA), repSTA);
 %%
-
 neuron1Sim = zeros(numOfRepeats, length(scaledRepStimulus));
 neuron2Sim = zeros(numOfRepeats, length(scaledRepStimulus));
 load('Filters.mat');
@@ -49,13 +56,13 @@ scaledRepStimulusCut = scaledRepStimulus(stimulusFilterLength + 1:end - stimulus
 scaledRepSpikes1Cut = scaledRepSpikes1(:,stimulusFilterLength + 1:end - stimulusFilterLength);
 %scaledRepSpikes2Cut = scaledRepSpikes2(:,stimulusFilterLength + 1:end - stimulusFilterLength);
     
-[spikeRate, correlation] = CalculateCorrelatedSpikeRate(numOfRepeats, scaledRepSpikes1Cut, neuron1SimCut, 8);
+[spikeRate, correlation] = CalculateCorrelatedSpikeRate(numOfRepeats, scaledRepSpikes1Cut, neuron1SimCut, 15);
 lengthOfRepeat = size(spikeRate,2);
 figure();
 plot(1:lengthOfRepeat, spikeRate(1,:), 1:lengthOfRepeat, spikeRate(2,:));
 randPoint = randi(lengthOfRepeat - 200);
-%xlim([randPoint randPoint + 190]);
-xlim([1 500]);
+xlim([randPoint randPoint + 190]);
+%xlim([1 500]);
 title(['R ' num2str(correlation)]);
 xlabel('Time (ms)');
 ylabel('Firing rate ');
