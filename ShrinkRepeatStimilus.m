@@ -5,7 +5,7 @@ function scaledRepStimulus = ShrinkRepeatStimilus(stimulus, stimTimes, wantedSam
     scaledRepStimulus = zeros(wantedLength, 1);
 
     for i = 1:wantedLength - 1
-        scaledRepStimulus(i) = mean(LongStim((i - 1) * wantedSampleFactor + 1: i * wantedSampleFactor));
+        scaledRepStimulus(i) = mode(LongStim((i - 1) * wantedSampleFactor + 1: i * wantedSampleFactor));
     end
-        scaledRepStimulus(i) = mean(LongStim((wantedLength - 1) * wantedSampleFactor + 1 :end));
+        scaledRepStimulus(i) = mode(LongStim((wantedLength - 1) * wantedSampleFactor + 1 :end));
 end

@@ -8,10 +8,12 @@ load([datdir, 'SpTimes']);
 load ('repeatStimulusTimes');    
 load ('RepStimulusExtended');
 load ('RepSpTimes');    
+load('sortedQualityInd');
 ncells = length(SpTimes);
 numOfRepeats = 200;
-choosedNeuron = randi(1)
-couplenNeurons = [choosedNeuron];
+choosedNeuron = randi(10);
+sortedQualityInd(choosedNeuron)
+couplenNeurons = [sortedQualityInd(choosedNeuron)];
 numOfNeurons = 1;
 wantedSampleFactor = 20;
 %%
@@ -27,7 +29,6 @@ save('Filters.mat', 'Filters', 'scaledStimulus', 'stimulusFilterLength', 'coupli
 %% Repeat stimulus
 scaledRepSpikes1 = shrinkRepeatSpikes(repeatStimulusTimes, RepSpTimes(couplenNeurons(1)).sp, wantedSampleFactor);
 %scaledRepSpikes2 = shrinkRepeatSpikes(repeatStimulusTimes, RepSpTimes(couplenNeurons(2)).sp, wantedSampleFactor);
-RepStimulusExtended = RepStimulusExtended(1,:) - mean(RepStimulusExtended(1,:));
 scaledRepStimulus = ShrinkRepeatStimilus(RepStimulusExtended, repeatStimulusTimes, wantedSampleFactor);
 stimulusDesignMatrix = buildStimulusDesignMatrix(length(learnedSTA), scaledRepStimulus);
 repSTA = zeros(length(learnedSTA), 1);
@@ -56,7 +57,7 @@ scaledRepStimulusCut = scaledRepStimulus(stimulusFilterLength + 1:end - stimulus
 scaledRepSpikes1Cut = scaledRepSpikes1(:,stimulusFilterLength + 1:end - stimulusFilterLength);
 %scaledRepSpikes2Cut = scaledRepSpikes2(:,stimulusFilterLength + 1:end - stimulusFilterLength);
     
-[spikeRate, correlation] = CalculateCorrelatedSpikeRate(numOfRepeats, scaledRepSpikes1Cut, neuron1SimCut, 15);
+[spikeRate, correlation] = CalculateCorrelatedSpikeRate(numOfRepeats, scaledRepSpikes1Cut, neuron1SimCut, 8);
 lengthOfRepeat = size(spikeRate,2);
 figure();
 plot(1:lengthOfRepeat, spikeRate(1,:), 1:lengthOfRepeat, spikeRate(2,:));

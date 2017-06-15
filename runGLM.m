@@ -3,13 +3,12 @@ function [scaledStimulus, couplingFilters, learnedSTA, deltaT, meanFiringRate] =
 
 % set spikes var
 tsp = SpTimes(neuronIndex).sp;
-tsp = tsp(1:1500);
+%tsp = tsp(1:1500);
 binsInSecond = 500;
 deltaT = 1 / binsInSecond;
 filterSizeBeforeSpike = 200;
 
 numOfCoupledNeurons = length(couplenNeurons);
-Stim = Stim - mean(Stim);
 minLastSpike = tsp(length(tsp));
 
 for i = 1:numOfCoupledNeurons
@@ -28,7 +27,9 @@ end
 wantedSampFactor = 20;
 
 % We change the resolutin of the spikes and stimulus
-[scaledSpikes, scaledStimulus, rawSpikesVector, lastStimulus] = changeSpikesAndStimulusRsolution(tsp, Stim, stimtimes, wantedSampFactor, minLastSpike);
+[scaledSpikes, scaledStimulus, rawSpikesVector,stimulusSampleVector, lastStimulus] = changeSpikesAndStimulusRsolution(tsp, Stim, stimtimes, wantedSampFactor, minLastSpike);
+% bla(scaledStimulus,find(scaledSpikes), 200);
+% bla(stimulusSampleVector,find(rawSpikesVector), 4000);
 
 [neuronRawSpikes, neuronsSclaedSpikes] = getNeuronsRawSpikesSeries(numOfCoupledNeurons, neuron, lastStimulus, wantedSampFactor, length(scaledSpikes));
 lengthOfExpRaw = length(rawSpikesVector);
@@ -58,7 +59,6 @@ stimtest = scaledStimulus(iitest);
 
 % Train spikes
 spstrain = scaledSpikes(iitrain);
-
 % Test spikes
 spstest =  scaledSpikes(iitest);
 coupledTrain = neuronsSclaedSpikes(:,iitrain);
