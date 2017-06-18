@@ -1,20 +1,20 @@
 function response = RunGLMSimulation(numOfNeurons, Stimulus, Filters, stimulusFilterLength, couplingFilterLength,deltaT)
 maxFilterLength = max(stimulusFilterLength, couplingFilterLength);
 simulationLength = length(Stimulus);
-response = zeros(numOfNeurons, simulationLength + maxFilterLength);
-linearValue = zeros(numOfNeurons, simulationLength + maxFilterLength);
+response = zeros(numOfNeurons, simulationLength);
+linearValue = zeros(numOfNeurons, simulationLength);
 nCount = 0;
 nbinsPerEval = 100;  % Default number of bins to update for each spike
 
 for neuronIndex = 1:numOfNeurons
-    linearValue(neuronIndex, stimulusFilterLength + 1:end) = conv(Stimulus, Filters(neuronIndex).StimulusFilter, 'same');
+    linearValue(neuronIndex,:) = conv(Stimulus, Filters(neuronIndex).StimulusFilter, 'same');
     linearValue(neuronIndex,:) = linearValue(neuronIndex,:) + Filters(neuronIndex).meanFiringRate ;
 end
 
 rprev = zeros(1,numOfNeurons);
 nsp = zeros(1,numOfNeurons);
 tspnext = exprnd(1,1,numOfNeurons);
-currentBin= maxFilterLength + 1;
+currentBin= 1;
 while currentBin <= simulationLength
     iinxt = currentBin:min(currentBin+nbinsPerEval-1,simulationLength);
     nii = length(iinxt);  % Number of bins
@@ -47,5 +47,5 @@ while currentBin <= simulationLength
         nbinsPerEval = max(20, round(1.5*muISI)); 
     end
 end
- response = response(:,maxFilterLength + 1:end);
+% response = response(:,maxFilterLength + 1:end);
 end

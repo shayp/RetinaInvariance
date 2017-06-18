@@ -10,21 +10,27 @@ load('Global');
 % number of neurons to include
 N = 251;
 lengthOfSTAFilter = 4000;
+numOfSessions = 6;
 wantedSeries = 6;
 numOfClusters = 6;
-selectedenuron = 33;
 % define array for the sta
 STAAll=zeros(lengthOfSTAFilter,N);
 
 spikeQuality = ([TT(:).Quality]);
 [~, sortedQualityInd] = sort(spikeQuality);
+sortedQualityInd = fliplr(sortedQualityInd);
+index = randi(6);
+selectedenuron = sortedQualityInd(index);
+
 save (['sortedQualityInd'],'sortedQualityInd');    
 % we find only the imortant indexes in the event marker
 importantStimIndexes = find(WW(:,1)>150);
-importantStimIndexes = importantStimIndexes(find(diff(importantStimIndexes)>10));
+problematicIndexes = find(diff(importantStimIndexes) < 10) + 1;
+importantStimIndexes(problematicIndexes) = [];
 % Find first and last indexes for the wanted seesion
 wantedSeriesFirstIndex = (globalVal.numberOfNonRepeatStimulus + globalVal.numberOfRepeatStimulus) * (wantedSeries - 1) + 1;
-wantedSeriesLastIndex = (globalVal.numberOfNonRepeatStimulus + globalVal.numberOfRepeatStimulus) * (wantedSeries);
+wantedSeriesLastIndex = (globalVal.numberOfNonRepeatStimulus + globalVal.numberOfRepeatStimulus) * (wantedSeries) + 1;    
+
 
 % Find start and end time for stimulus in the wanted session
 nonRepeatStimulusStartTime = StimTime(wantedSeriesFirstIndex);
@@ -33,16 +39,15 @@ endOfStimlus = StimTime(wantedSeriesLastIndex);
 repeatStimulusTimes = StimTime((wantedSeriesFirstIndex + globalVal.numberOfNonRepeatStimulus: wantedSeriesLastIndex));
 repeatStimulusTimes = repeatStimulusTimes - repeatStimulusTimes(1) + 1;
 % define where the repeat stimulus starts
-repeatStimulusStartInVector = RepeatStimulusStartTime - nonRepeatStimulusStartTime;
-
-% Get only the important indexes of wanted session from the event marker
-wantedseriesWWIndexes = importantStimIndexes(wantedSeriesFirstIndex:wantedSeriesLastIndex);
+repeatStimulusStartInVector = RepeatStimulusStartTime - nonRepeatStimulusStartTime + 1;
 
 % Define the stimulus array
 Stimulus = zeros(2,endOfStimlus - nonRepeatStimulusStartTime); 
 
 %Remove mean from the stimulus(zero mean)
 WW(:,3) = WW(:,3) - mean(WW(:,3));
+
+% Insert the non repeat stimulus
 for j = wantedSeriesFirstIndex: wantedSeriesFirstIndex + globalVal.numberOfNonRepeatStimulus - 1
     % find the length for resize the stimuli in this session
     lengthToResize = StimTime(j + 1) - StimTime(j);
@@ -56,31 +61,37 @@ for j = wantedSeriesFirstIndex: wantedSeriesFirstIndex + globalVal.numberOfNonRe
     stimuliValArray = zeros(1,lengthToResize);
     
     stimuliValArray(1:lengthToResize) =  0;
-
+%         j
+%     length(currentStimulus)
+%    lengthToResize
+%     if j > 1
+%         WW(importantStimIndexes(j) -4:importantStimIndexes(j) + 1,3)
+%         WW(importantStimIndexes(j + 1) - 3:importantStimIndexes(j + 1),3)
+%     end
     
     % Set the stimulus and the type of the stimlus
     Stimulus(1, StimTime(j) - StimTime(wantedSeriesFirstIndex) + 1:StimTime(j + 1) - StimTime(wantedSeriesFirstIndex)) = extendStimulus;
     Stimulus(2, StimTime(j) - StimTime(wantedSeriesFirstIndex) + 1:StimTime(j + 1) - StimTime(wantedSeriesFirstIndex)) = stimuliValArray;
 end
 % Run for each "small" session of stimulus
-for j = wantedSeriesFirstIndex + globalVal.numberOfNonRepeatStimulus:wantedSeriesLastIndex - 1
+for j = wantedSeriesFirstIndex + globalVal.numberOfNonRepeatStimulus:wantedSeriesLastIndex -1
     
     % find the length for resize the stimuli in this session
     lengthToResize = StimTime(j + 1) - StimTime(j);
     
-	currentStimulus = WW(importantStimIndexes(j) + 1:importantStimIndexes(j + 1) ,3);
+	currentStimulus = WW(importantStimIndexes(j) + 1:importantStimIndexes(j + 1),3);
 
-    j
-   lengthToResize
-   currentStimulus(1)
-   currentStimulus(end)
+%     j
+%     length(currentStimulus)
+%    lengthToResize
+%     WW(importantStimIndexes(j) -4:importantStimIndexes(j) + 1,3)
+%     WW(importantStimIndexes(j + 1) - 3:importantStimIndexes(j + 1),3)
 
     % Extend the stimulus to the expiriment size
     extendStimulus = imresize(currentStimulus, [lengthToResize 1], 'nearest');
     
     % Define array for the meanning od each stimulus
     stimuliValArray = zeros(1,lengthToResize);
-    
     stimuliValArray(1:lengthToResize) =  j - wantedSeriesFirstIndex - globalVal.numberOfNonRepeatStimulus + 1;
     
     % Set the stimulus and the type of the stimlus
@@ -133,22 +144,22 @@ SpTimes = NonRepTT;
 RepSpTimes = RepTT;
   save (['RepSpTimes'],'RepSpTimes');    
 %%
-RepSTA = zeros(N, lengthOfSTAFilter);
-nonRepSTA = zeros(N, lengthOfSTAFilter);
+RepSTA = zeros(1, lengthOfSTAFilter);
+nonRepSTA = zeros(1, lengthOfSTAFilter);
 
 RepTT(selectedenuron).sp = RepTT(selectedenuron).sp + StimTime(wantedSeriesFirstIndex + globalVal.numberOfNonRepeatStimulus) - StimTime(wantedSeriesFirstIndex);
 repDesignMatrix = zeros(1,lengthOfSTAFilter,5000);
 nonRepDesignMatrix = zeros(1,lengthOfSTAFilter,5000);
 for i=selectedenuron
     for spikeIndex = 1:length(RepTT(i).sp);
-        repDesignMatrix(i,1:lengthOfSTAFilter,spikeIndex) = Stimulus(1, RepTT(i).sp(spikeIndex) - lengthOfSTAFilter:RepTT(i).sp(spikeIndex) - 1);
+        repDesignMatrix(1,1:lengthOfSTAFilter,spikeIndex) = Stimulus(1, RepTT(i).sp(spikeIndex) - lengthOfSTAFilter:RepTT(i).sp(spikeIndex) - 1);
     end
     for spikeIndex = 1:length(NonRepTT(i).sp);
-        nonRepDesignMatrix(i,1:lengthOfSTAFilter,spikeIndex) = Stimulus(1, NonRepTT(i).sp(spikeIndex) - lengthOfSTAFilter:NonRepTT(i).sp(spikeIndex) - 1);
+        nonRepDesignMatrix(1,1:lengthOfSTAFilter,spikeIndex) = Stimulus(1, NonRepTT(i).sp(spikeIndex) - lengthOfSTAFilter:NonRepTT(i).sp(spikeIndex) - 1);
     end
     
-   RepSTA(i,1:lengthOfSTAFilter) = sum(repDesignMatrix(i, :, :),3) / length(RepTT(i).sp);
-   nonRepSTA(i,1:lengthOfSTAFilter) = sum(nonRepDesignMatrix(i, :, :),3) / length(NonRepTT(i).sp);
+   RepSTA(1,1:lengthOfSTAFilter) = sum(repDesignMatrix(1, :, :),3) / length(RepTT(i).sp);
+   nonRepSTA(1,1:lengthOfSTAFilter) = sum(nonRepDesignMatrix(1, :, :),3) / length(NonRepTT(i).sp);
 end
 
 %  for i=selectedenuron
@@ -164,7 +175,7 @@ end
 %     nonRepSTA(i,:) = nonRepSTA(i,:) / length(NonRepTT(i).sp);
 %  end
  figure();
- plot(1:lengthOfSTAFilter, RepSTA(selectedenuron,:), 1:lengthOfSTAFilter,  nonRepSTA(selectedenuron,:));
+ plot(1:lengthOfSTAFilter, RepSTA(1,:), 1:lengthOfSTAFilter,  nonRepSTA(1,:));
  
 % Removelist = [192,161,141,59];
 % STA(Removelist(1:end),:) = [];

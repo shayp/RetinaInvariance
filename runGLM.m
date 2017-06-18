@@ -3,7 +3,7 @@ function [scaledStimulus, couplingFilters, learnedSTA, deltaT, meanFiringRate] =
 
 % set spikes var
 tsp = SpTimes(neuronIndex).sp;
-%tsp = tsp(1:1500);
+tsp = tsp(1:1500);
 binsInSecond = 500;
 deltaT = 1 / binsInSecond;
 filterSizeBeforeSpike = 200;
@@ -38,7 +38,7 @@ lengthOfExpRaw = length(rawSpikesVector);
 lengthOfExp = length(scaledSpikes);
  
 % fraction of data to use for training
-trainfrac = .4;  
+trainfrac = .5;  
  
 % number of training samples
 ntrain = ceil(lengthOfExp*trainfrac);  
@@ -72,10 +72,9 @@ fprintf('Testing scaled: %d spikes\n', sum(spstest));
 %% Post spike base vectors
 
 % Define number of base vectors for post spike filter
-numOfBaseVectors = 3;
+numOfBaseVectors = 10;
  
-% Define parameters for post spike base vectors
-lastPeak = 0.010;
+lastPeak = 0.030;
 dt = 0.001;
 hpeaks = [0.001 lastPeak];
 b = 0.005;
@@ -85,7 +84,7 @@ b = 0.005;
 % Update the size after base vectors build(Can be changed)
 numOfBaseVectors = size(postSpikeBaseVectors,2);
 
-% % % % Plot base vectors
+% % % % % Plot base vectors
 figure();
 plot(postSpikeBaseVectors);
 title('Base vectors for post spike history');

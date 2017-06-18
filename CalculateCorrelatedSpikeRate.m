@@ -13,8 +13,12 @@ for j = 1:spikeRateLength - 1
 end
 sum(spikeRate(1,:))
 sum(spikeRate(2,:))
-spikeRate(1,:) = circshift(spikeRate(1,:)',4)';
 spikeRate(1,:) = spikeRate(1,:) / (windowSize * lengthOfExp);
 spikeRate(2,:) = spikeRate(2,:) / (windowSize * numOfRepeats);
-spikeRate(2,:) = spikeRate(2,:);
+[vecCorrelation, vecLegs] = xcorr(spikeRate(1,:),spikeRate(2,:));
+[~, index] = max(vecCorrelation);
+Leg =  -vecLegs(index)
+spikeRate(1,:) = circshift(spikeRate(1,:)',Leg)';
+correlation = corr2(spikeRate(1,:),spikeRate(2,:))
+spikeRate = spikeRate(:,20 * windowSize: end - 20 * windowSize);
 correlation = corr2(spikeRate(1,:),spikeRate(2,:))
