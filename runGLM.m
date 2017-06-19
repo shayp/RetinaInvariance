@@ -72,10 +72,10 @@ fprintf('Testing scaled: %d spikes\n', sum(spstest));
 %% Post spike base vectors
 
 % Define number of base vectors for post spike filter
-numOfBaseVectors = 10;
+numOfBaseVectors = 4;
  
-lastPeak = 0.030;
-dt = 0.001;
+lastPeak = 0.060;
+dt = 0.002;
 hpeaks = [0.001 lastPeak];
 b = 0.005;
  
@@ -163,9 +163,10 @@ for i = 1:nlambda
     i
     % We plot the learned STA of current iteration
     plot(learnedParameters(1:filterSizeBeforeSpike));
-    xlabel('time before spike');drawnow; pause(.5);
     ylabel('intensity');
-    
+    title([num2str(i)]);
+    xlabel('time before spike');drawnow; pause(.5);
+
     % The cirrent entry parameters are the previous learing estimatror
     currentEntryParameters = learnedParameters; 
     

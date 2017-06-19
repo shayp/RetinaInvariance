@@ -2,13 +2,13 @@ function response = runSimulationPoisson(numOfNeurons, Stimulus, Filters, stimul
 
 maxFilterLength = max(stimulusFilterLength, couplingFilterLength);
 simulationLength = length(Stimulus);
-response = zeros(numOfNeurons, simulationLength + maxFilterLength);
-projected = zeros(numOfNeurons, simulationLength + maxFilterLength);
+response = zeros(numOfNeurons, simulationLength);
+projected = zeros(numOfNeurons, simulationLength);
 nCount = 0;
 for neuronIndex = 1:numOfNeurons
-    projected(neuronIndex, stimulusFilterLength + 1:end) = conv(Stimulus, Filters(neuronIndex).StimulusFilter, 'same') + Filters(neuronIndex).meanFiringRate;
+    projected(neuronIndex, :) = conv(Stimulus, Filters(neuronIndex).StimulusFilter, 'same') + Filters(neuronIndex).meanFiringRate;
 end
-for i = maxFilterLength + 1:simulationLength
+for i = 1:simulationLength - 1
     for neuronIndex = 1:numOfNeurons
         curentLambda = exp(projected(neuronIndex,i)) * deltaT;
         sample = poissrnd(curentLambda);
@@ -16,13 +16,12 @@ for i = maxFilterLength + 1:simulationLength
             nCount  = nCount + 1;
             %sample = 1;
             for couplingIndex = 1:numOfNeurons
-                projected(couplingIndex, i + 1: i + couplingFilterLength) = projected(couplingIndex, i + 1: i + couplingFilterLength) + Filters(couplingIndex).couplingFilters(neuronIndex,:);
+                minStep = min(couplingFilterLength,simulationLength - i);
+                projected(couplingIndex, i + 1: i + minStep) = projected(couplingIndex, i + 1:i + minStep) + Filters(couplingIndex).couplingFilters(neuronIndex,1:minStep);
             end
         end
       response(neuronIndex, i) = sample;
         
     end
 end
-response = response(:,maxFilterLength + 1:end);
-
 end

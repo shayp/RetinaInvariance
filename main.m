@@ -11,7 +11,7 @@ load ('RepSpTimes');
 load('sortedQualityInd');
 ncells = length(SpTimes);
 numOfRepeats = 200;
-choosedNeuron = randi(100);
+choosedNeuron = randi(6);
 sortedQualityInd(choosedNeuron)
 couplenNeurons = [sortedQualityInd(choosedNeuron)];
 %couplenNeurons = [33];
@@ -51,13 +51,6 @@ for j = 1:numOfRepeats
     %neuron2Sim(j,:) =  response(2,:);
 end
 
-% neuron1SimCut = neuron1Sim(:,stimulusFilterLength + 1:end - stimulusFilterLength);
-% %neuron2SimCut = neuron2Sim(:,stimulusFilterLength + 1:end - stimulusFilterLength);
-% 
-% scaledRepStimulusCut = scaledRepStimulus(stimulusFilterLength + 1:end - stimulusFilterLength);
-% scaledRepSpikes1Cut = scaledRepSpikes1(:,stimulusFilterLength + 1:end - stimulusFilterLength);
-% %scaledRepSpikes2Cut = scaledRepSpikes2(:,stimulusFilterLength + 1:end - stimulusFilterLength);
-    
 [spikeRate, correlation] = CalculateCorrelatedSpikeRate(numOfRepeats, scaledRepSpikes1, neuron1Sim, 8);
 lengthOfRepeat = size(spikeRate,2);
 figure();
