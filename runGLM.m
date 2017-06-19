@@ -3,7 +3,7 @@ function [scaledStimulus, couplingFilters, learnedSTA, deltaT, meanFiringRate] =
 
 % set spikes var
 tsp = SpTimes(neuronIndex).sp;
-tsp = tsp(1:1500);
+%tsp = tsp(1:1500);
 binsInSecond = 500;
 deltaT = 1 / binsInSecond;
 filterSizeBeforeSpike = 200;
@@ -38,7 +38,7 @@ lengthOfExpRaw = length(rawSpikesVector);
 lengthOfExp = length(scaledSpikes);
  
 % fraction of data to use for training
-trainfrac = .5;  
+trainfrac = .8;  
  
 % number of training samples
 ntrain = ceil(lengthOfExp*trainfrac);  
@@ -238,12 +238,12 @@ title('coupling filter');
 xlabel('Time after  spike');
 ylabel('Firing factor');
 
-% % Plot leaned spike history filter
-% subplot(3,2,4);
-% plot(couplingFilters(2,:));
-% title('coupling filter');
-% xlabel('Time after spike');
-% ylabel('Firing factor');
+% Plot leaned spike history filter
+subplot(3,2,4);
+plot(couplingFilters(2,:));
+title('coupling filter');
+xlabel('Time after spike');
+ylabel('Firing factor');
 
 % Train likelihood
 subplot(3,2,5);

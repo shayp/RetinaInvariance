@@ -11,11 +11,11 @@ load ('RepSpTimes');
 load('sortedQualityInd');
 ncells = length(SpTimes);
 numOfRepeats = 200;
-choosedNeuron = randi(6);
+choosedNeuron = randi(100, 1, 2);
 sortedQualityInd(choosedNeuron)
 couplenNeurons = [sortedQualityInd(choosedNeuron)];
 %couplenNeurons = [33];
-numOfNeurons = 1;
+numOfNeurons = length(couplenNeurons);
 wantedSampleFactor = 20;
 %%
 for i = 1:length(couplenNeurons)
@@ -28,36 +28,41 @@ Filters(i).meanFiringRate = meanFiringRate;
 end
 save('Filters.mat', 'Filters', 'scaledStimulus', 'stimulusFilterLength', 'couplingFilterLength', 'deltaT');
 %% Repeat stimulus
-scaledRepSpikes1 = shrinkRepeatSpikes(repeatStimulusTimes, RepSpTimes(couplenNeurons(1)).sp, wantedSampleFactor);
+for i = 1:numOfNeurons
+    scaledRepSpikes(i).vector  = shrinkRepeatSpikes(repeatStimulusTimes, RepSpTimes(couplenNeurons(i)).sp, wantedSampleFactor);
+end
+%scaledRepSpikes1 = shrinkRepeatSpikes(repeatStimulusTimes, RepSpTimes(couplenNeurons(1)).sp, wantedSampleFactor);
 %scaledRepSpikes2 = shrinkRepeatSpikes(repeatStimulusTimes, RepSpTimes(couplenNeurons(2)).sp, wantedSampleFactor);
 scaledRepStimulus = ShrinkRepeatStimilus(RepStimulusExtended, repeatStimulusTimes, wantedSampleFactor);
-stimulusDesignMatrix = buildStimulusDesignMatrix(length(learnedSTA), scaledRepStimulus);
-repSTA = zeros(length(learnedSTA), 1);
-for i = 1:size(scaledRepSpikes1,1)
-repSTA = repSTA +  calculateSTA(stimulusDesignMatrix, scaledRepSpikes1(i,:)');
-end
-repSTA = repSTA / size(scaledRepSpikes1,1);
-figure();
-plot(1:length(learnedSTA), learnedSTA, 1:length(learnedSTA), repSTA);
+%stimulusDesignMatrix = buildStimulusDesignMatrix(length(learnedSTA), scaledRepStimulus);
+% repSTA = zeros(length(learnedSTA), 1);
+% for i = 1:size(scaledRepSpikes1,1)
+% repSTA = repSTA +  calculateSTA(stimulusDesignMatrix, scaledRepSpikes1(i,:)');
+% end
+% repSTA = repSTA / size(scaledRepSpikes1,1);
+% figure();
+% plot(1:length(learnedSTA), learnedSTA, 1:length(learnedSTA), repSTA);
 %%
-neuron1Sim = zeros(numOfRepeats, length(scaledRepStimulus));
-neuron2Sim = zeros(numOfRepeats, length(scaledRepStimulus));
+neuronSim = zeros(numOfNeurons, numOfRepeats, length(scaledRepStimulus));
 load('Filters.mat');
 
 for j = 1:numOfRepeats
     response = RunGLMSimulation(numOfNeurons, scaledRepStimulus, Filters, stimulusFilterLength, couplingFilterLength, deltaT);
     %response = runSimulationPoisson(numOfNeurons, scaledRepStimulus, Filters, stimulusFilterLength, couplingFilterLength,deltaT);
-    neuron1Sim(j,:) =  response(1,:);
-    %neuron2Sim(j,:) =  response(2,:);
+    for i = 1:numOfNeurons
+        neuronSim(i,j,:) =  response(i,:);
+    end
 end
 
-[spikeRate, correlation] = CalculateCorrelatedSpikeRate(numOfRepeats, scaledRepSpikes1, neuron1Sim, 8);
-lengthOfRepeat = size(spikeRate,2);
-figure();
-plot(2* (1:lengthOfRepeat), spikeRate(1,:), 2 * (1:lengthOfRepeat), spikeRate(2,:));
-randPoint = randi(lengthOfRepeat - 800);
-xlim([randPoint randPoint + 800]);
-%xlim([1 500]);
-title(['R ' num2str(correlation)]);
-xlabel('Time (ms)');
-ylabel('Firing rate ');
+for i = 1:numOfNeurons
+[spikeRate, correlation] = CalculateCorrelatedSpikeRate(numOfRepeats, scaledRepSpikes(i).vector, neuronSim(i,:,:), 8);
+    lengthOfRepeat = size(spikeRate,2);
+    figure();
+    plot(2* (1:lengthOfRepeat), spikeRate(1,:), 2 * (1:lengthOfRepeat), spikeRate(2,:));
+    randPoint = randi(lengthOfRepeat - 200);
+    xlim([randPoint randPoint + 200]);
+    %xlim([1 500]);
+    title(['R ' num2str(correlation)]);
+    xlabel('Time (ms)');
+    ylabel('Firing rate (spikes/sec) ');
+end

@@ -20,5 +20,5 @@ spikeRate(2,:) = spikeRate(2,:) / (windowSize * numOfRepeats);
 Leg =  -vecLegs(index)
 spikeRate(1,:) = circshift(spikeRate(1,:)',Leg)';
 correlation = corr2(spikeRate(1,:),spikeRate(2,:))
-spikeRate = spikeRate(:,20 * windowSize: end - 20 * windowSize);
+spikeRate = spikeRate(:, windowSize: end - windowSize);
 correlation = corr2(spikeRate(1,:),spikeRate(2,:))
