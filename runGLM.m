@@ -38,7 +38,7 @@ lengthOfExpRaw = length(rawSpikesVector);
 lengthOfExp = length(scaledSpikes);
  
 % fraction of data to use for training
-trainfrac = .8;  
+trainfrac = .25;  
  
 % number of training samples
 ntrain = ceil(lengthOfExp*trainfrac);  
@@ -85,10 +85,10 @@ b = 0.005;
 numOfBaseVectors = size(postSpikeBaseVectors,2);
 
 % % % % % Plot base vectors
-figure();
-plot(postSpikeBaseVectors);
-title('Base vectors for post spike history');
-xlabel('Time after spike');drawnow;
+% figure();
+% plot(postSpikeBaseVectors);
+% title('Base vectors for post spike history');
+% xlabel('Time after spike');drawnow;
 %% Design Matrix build
 
 % We build the stimulus design matrix for train data
@@ -238,12 +238,12 @@ title('coupling filter');
 xlabel('Time after  spike');
 ylabel('Firing factor');
 
-% Plot leaned spike history filter
-subplot(3,2,4);
-plot(couplingFilters(2,:));
-title('coupling filter');
-xlabel('Time after spike');
-ylabel('Firing factor');
+% % Plot leaned spike history filter
+% subplot(3,2,4);
+% plot(couplingFilters(2,:));
+% title('coupling filter');
+% xlabel('Time after spike');
+% ylabel('Firing factor');
 
 % Train likelihood
 subplot(3,2,5);
