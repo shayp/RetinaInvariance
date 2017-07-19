@@ -1,6 +1,6 @@
-function [scaledStimulus, couplingFilters, learnedSTA, deltaT, meanFiringRate, cellSTA] = runGLM(neuronIndex, Stim, stimtimes, SpTimes, couplenNeurons)
+function [result_GLM_Full, result_GLM_Partial, result_LN,deltaT, cellSTA] = runGLM(neuronIndex, Stim, stimtimes, SpTimes, couplenNeurons)
 %% Initlaization
-
+addpath('./LossFunctions', './preProcessTools');
 % set spikes var
 tsp = SpTimes(neuronIndex).sp;
 binsInSecond = 500;
@@ -27,8 +27,7 @@ wantedSampFactor = 20;
 
 % We change the resolutin of the spikes and stimulus
 [scaledSpikes, scaledStimulus, rawSpikesVector,stimulusSampleVector, lastStimulus] = changeSpikesAndStimulusRsolution(tsp, Stim, stimtimes, wantedSampFactor, minLastSpike);
-% bla(scaledStimulus,find(scaledSpikes), 200);
-% bla(stimulusSampleVector,find(rawSpikesVector), 4000);
+
 
 [neuronRawSpikes, neuronsSclaedSpikes] = getNeuronsRawSpikesSeries(numOfCoupledNeurons, neuron, lastStimulus, wantedSampFactor, length(scaledSpikes));
 lengthOfExpRaw = length(rawSpikesVector);
@@ -72,7 +71,6 @@ fprintf('Testing scaled: %d spikes\n', sum(spstest));
 
 % Define number of base vectors for post spike filter
 numOfBaseVectors = 4;
- 
 lastPeak = 0.05;
 dt = 0.001;
 hpeaks = [0.001 lastPeak];
@@ -84,15 +82,6 @@ b = 0.005;
 numOfBaseVectors = size(postSpikeBaseVectors,2);
 resizeBaseVectors = imresize(postSpikeBaseVectors, [40 numOfBaseVectors]);
 postSpikeBaseVectors = resizeBaseVectors;
-% % % % Plot base vectors
-% figure();
-% subplot(2,1,1);
-% plot(postSpikeBaseVectors);
-% title('Base vectors for post spike history');
-% xlabel('Time after spike');
-% subplot(2,1,2);
-% plot(resizeBaseVectors);
-% drawnow;
 %% Design Matrix build
 
 % We build the stimulus design matrix for train data
@@ -133,7 +122,6 @@ opts = optimset('Gradobj','on','Hessian','on','display','iter-detailed');
 % Set start parameters for the optimization problem
 cellPostSpike =  zeros(1,numOfBaseVectors * numOfCoupledNeurons);
 meanFiringRate = rand();
-learnedParameters = [cellSTA' cellPostSpike meanFiringRate];
 
 % This matrix computes differences between adjacent coeffs
 Dx1 = spdiags(ones(filterSizeBeforeSpike,1)*[-1 1],0:1,filterSizeBeforeSpike - 1,filterSizeBeforeSpike - 1);
@@ -143,113 +131,115 @@ Dx = Dx1'*Dx1;
 
 % Select lambda smoothing penalty by cross-validation 
  % grid of lambda values (ridge parameters)
-lambdavals = (2).^(1:17);
+lambdavals = (2).^(6:17);
 nlambda = length(lambdavals);
 
 % Embed Dx matrix in matrix with one extra row/column for constant coeff
 D = blkdiag(0,Dx); 
 
-% Allocate space for train and test errors
-negLogTrain = zeros(nlambda,1); 
-negLogTest = zeros(nlambda,1);  
-lambdaLearrnedParameters = zeros(length(learnedParameters),nlambda);
-meanFiringRateArray = zeros(1,nlambda);
-
 %% Run optimization problem with diffrent lambdas
+params_LN_Bias = [cellSTA' meanFiringRate]';
+params_GLM_Full = [cellSTA' cellPostSpike meanFiringRate]';
+params_GLM_Partial = [cellPostSpike meanFiringRate];
+params_LN_No_Bias = cellSTA;
 
-startParams = [cellSTA'];
-learnedParameters = startParams;
+learned_LN_Bias = zeros(length(params_LN_Bias),nlambda);
+learned_GLM_Full = zeros(length(params_GLM_Full),nlambda);
+learned_GLM_Partial = zeros(length(params_GLM_Full),nlambda);
+learned_LN_No_Bias = zeros(length(params_LN_No_Bias),nlambda);
+
+% Allocate space for train and test errors
+LL_GLM_Full_Train = zeros(nlambda,1);
+LL_GLM_Full_Test = zeros(nlambda,1); 
+LL_GLM_Partial_Train = zeros(nlambda,1);
+LL_GLM_Partial_Test = zeros(nlambda,1);
+LL_LN_Train = zeros(nlambda,1);
+LL_LN_Test = zeros(nlambda,1);
+
 fig = figure('visible', 'off');
-neuronIndex
 hold on;
-timeBeforeSpike = linspace(-1 * filterSizeBeforeSpike  / binsInSecond, 0 , filterSizeBeforeSpike);
 % Run for each lambda, and learn the the parameters
 for i = 1:nlambda
     i
-    % We plot the learned STA of current iteration
-    plot(timeBeforeSpike, learnedParameters(1:filterSizeBeforeSpike));
-    ylabel('intensity');
-    title([num2str(i)]);
-    xlabel('time before spike(s)');drawnow; pause(.5);
-
-    % The cirrent entry parameters are the previous learing estimatror
-    currentEntryParameters = learnedParameters; 
-    
     % Compute the inverce covariance matrix with the current lambda
     Cinv = lambdavals(i) * D; % set inverse prior covariance
     
-    % We use 2 loss function, the first is negative log likelihood based on
-    % inhomginious poission process. The second is smoothing the STA
-    % estimatror using penalty on the difference between two linked weights.
-    
-    % The negative log likelihood function
-    negLikelihhod = @(prs)Loss_LN_logli_exp(prs,dataForLearnning);
-    
-    % The negative log posteriot funnction, for smoothing STA
-    lossfun = @(prs)glmneglogposterior(prs,negLikelihhod,Cinv, filterSizeBeforeSpike);
-    
-    % Call The optimization problem solver
-    learnedParameters = fminunc(lossfun,currentEntryParameters,opts);
+    % Learn  LN model with bias
+    negLikelihhod = @(prs)Loss_LN_Bias(prs,dataForLearnning);
+    lossfun = @(prs)Loss_posterior_LN_bias(prs,negLikelihhod,Cinv, filterSizeBeforeSpike);
+    learned_LN_Bias(:,i) = fminunc(lossfun,params_LN_Bias,opts);
+    LL_LN_Train(i) = Loss_LN_Bias(learned_LN_Bias(:,i), dataForLearnning);
+    LL_LN_Test(i) = Loss_LN_Bias(learned_LN_Bias(:,i), dataForTesting);
 
-    % We save the learned parameters
-    lambdaLearrnedParameters(1:filterSizeBeforeSpike,i) = learnedParameters;
+    % Learn Full GLM
+    negLikelihhod = @(prs)Loss_GLM_Full(prs,dataForLearnning);
+    lossfun = @(prs)Loss_posterior_GLM(prs,negLikelihhod,Cinv, filterSizeBeforeSpike);
+    learned_GLM_Full(:,i) = fminunc(lossfun,params_GLM_Full,opts);
+    params_GLM_Full = learned_GLM_Full(:,i);
+    LL_GLM_Full_Train(i) = Loss_GLM_Full(learned_GLM_Full(:,i), dataForLearnning);
+    LL_GLM_Full_Test(i) = Loss_GLM_Full(learned_GLM_Full(:,i), dataForTesting);
     
-    couplingParams = rand(1,length(cellPostSpike) + 1);
-    dataForLearnning.stimulusFilter = learnedParameters;
-    % The negative log posteriot funnction, for smoothing STA
-    lossfun = @(prs)Loss_GLM_coupling_logli_exp(prs,dataForLearnning);
+    % Learn LN no bias
+    negLikelihhod = @(prs)Loss_LN__NoBias(prs,dataForLearnning);
+    lossfun = @(prs)Loss_posterior_LN_NoBias(prs,negLikelihhod,Cinv);
+    learned_LN_No_Bias(:,i) = fminunc(lossfun,params_LN_No_Bias,opts);
+    params_LN_No_Bias = learned_LN_No_Bias(:,i);
     
-    % Call The optimization problem solver
-    couplingParams = fminunc(lossfun,couplingParams,opts);
-    
-    % We save the learned parameters
-    lambdaLearrnedParameters(filterSizeBeforeSpike + 1:end,i) = couplingParams;
-    
-%     % We calculate the negative log likelihood value for the current
-%     % estimator
-     negLogTrain(i) = Loss_GLM_logli_exp(lambdaLearrnedParameters(:,i), dataForLearnning);
-     negLogTest(i) = Loss_GLM_logli_exp(lambdaLearrnedParameters(:,i), dataForTesting);
-     meanFiringRateArray(i) = couplingParams(end);
+    % Learn GLM partial - using LN_No_Bias stimulus filter
+    dataForLearnning.stimulusProjection = trainStimulusDesignMatrix * params_LN_No_Bias;
+    dataForTesting.stimulusProjection = testStimulusDesignMatrix * params_LN_No_Bias;
+    lossfun = @(prs)Loss_GLM_Partial_History(prs,dataForLearnning);
+    params_GLM_Partial = fminunc(lossfun,params_GLM_Partial,opts);
+    learned_GLM_Partial(:,i) = [params_LN_No_Bias' params_GLM_Partial]';
+    LL_GLM_Partial_Train(i) = Loss_GLM_Partial_History(params_GLM_Partial, dataForLearnning);
+    LL_GLM_Partial_Test(i) = Loss_GLM_Partial_History(params_GLM_Partial, dataForTesting);
 end
-hold off;
-savefig(fig,['./Graphs/Neuron_' num2str(neuronIndex) '_LearnedStimulusFilter']);
-% Get the minimum log likelihood index
-[~,imin] = min(negLogTest);
-choosedParams = lambdaLearrnedParameters(:,imin);
 
-% Calculate the spike history vector based on the parameters learned
-spikeHistoryVector = choosedParams(filterSizeBeforeSpike + 1 :filterSizeBeforeSpike + numOfBaseVectors)' * postSpikeBaseVectors';
-couplingFilters = zeros(numOfCoupledNeurons, size(postSpikeBaseVectors,1));
+% Get the minimum log likelihood index
+[~,imin_LN_Bias] = min(LL_LN_Test);
+[~,imin_GLM_Full] = min(LL_GLM_Full_Test);
+[~,imin_GLM_Partial] = min(LL_GLM_Partial_Test);
+
+bestParams_LN = learned_LN_Bias(:, imin_LN_Bias);
+bestParams_GLM_Full = learned_GLM_Full(:, imin_GLM_Full);
+bestParams_GLM_Partial = learned_GLM_Partial(:, imin_GLM_Partial);
 
 for Index = 1:numOfCoupledNeurons
-    couplingFilters(Index,:) = choosedParams(filterSizeBeforeSpike + (Index  - 1) * numOfBaseVectors + 1 :filterSizeBeforeSpike + (Index) * numOfBaseVectors)' * postSpikeBaseVectors';
+    result_GLM_Full.couplingFilters(Index,:) = bestParams_GLM_Full(filterSizeBeforeSpike + (Index  - 1) * numOfBaseVectors + 1 :filterSizeBeforeSpike + (Index) * numOfBaseVectors)' * postSpikeBaseVectors';
+    result_GLM_Partial.couplingFilters(Index,:) = bestParams_GLM_Partial(filterSizeBeforeSpike + (Index  - 1) * numOfBaseVectors + 1 :filterSizeBeforeSpike + (Index) * numOfBaseVectors)' * postSpikeBaseVectors';
 end
-learnedSTA = lambdaLearrnedParameters(1:filterSizeBeforeSpike,imin);
-meanFiringRate = lambdaLearrnedParameters(end,imin);
+result_GLM_Full.StimulusFilter = bestParams_GLM_Full(1:filterSizeBeforeSpike);
+result_GLM_Full.meanFiringRate = bestParams_GLM_Full(end);
+
+result_GLM_Partial.StimulusFilter = bestParams_GLM_Partial(1:filterSizeBeforeSpike);
+result_GLM_Partial.meanFiringRate = bestParams_GLM_Partial(end);
+
+result_LN.StimulusFilter = bestParams_LN(1:filterSizeBeforeSpike);
+result_LN.meanFiringRate = bestParams_LN(end);
 %% Plot learned estimators
-
-fig = figure('visible', 'off');
-
-% Train likelihood
-subplot(3,1,1);
-plot(-negLogTrain);
-title('train likelihood');
-xlabel('lambda factor');
-ylabel('log likelihood');
-
-% Test likelihood
-subplot(3,1,2);
-plot(-negLogTest);
-title('test likelihood');
-xlabel('lambda factor');
-ylabel('log likelihood');
-
-% Test likelihood
-subplot(3,1,3);
-plot(meanFiringRateArray);
-title('Mean firing rate');
-xlabel('lambda factor');
-ylabel('mean value');
-savefig(fig,['./Graphs/Neuron_' num2str(neuronIndex) '_Likelihood']);
+% 
+% fig = figure('visible', 'off');
+% 
+% % Train likelihood
+% subplot(3,1,1);
+% plot(-negLogTrain);
+% title('train likelihood');
+% xlabel('lambda factor');
+% ylabel('log likelihood');
+% 
+% % Test likelihood
+% subplot(3,1,2);
+% plot(-negLogTest);
+% title('test likelihood');
+% xlabel('lambda factor');
+% ylabel('log likelihood');
+% 
+% % Test likelihood
+% subplot(3,1,3);
+% plot(meanFiringRateArray);
+% title('Mean firing rate');
+% xlabel('lambda factor');
+% ylabel('mean value');
+% savefig(fig,['./Graphs/Neuron_' num2str(neuronIndex) '_Likelihood']);
 
 end
