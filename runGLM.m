@@ -80,8 +80,11 @@ b = 0.005;
 [postSpiketimeVector,postSpikeBaseVectors, originalBaseVectors] = buildBaseVectorsForPostSpikeAndCoupling(numOfBaseVectors,dt,hpeaks, b);
 % Update the size after base vectors build(Can be changed)
 numOfBaseVectors = size(postSpikeBaseVectors,2);
-resizeBaseVectors = imresize(postSpikeBaseVectors, [40 numOfBaseVectors]);
+resizeBaseVectors = imresize(originalBaseVectors, [40 numOfBaseVectors]);
 postSpikeBaseVectors = resizeBaseVectors;
+% figure();
+% plot(postSpikeBaseVectors);drawnow
+% savefig('./Graphs/PostSpikeBaseVectors');
 %% Design Matrix build
 
 % We build the stimulus design matrix for train data
@@ -117,7 +120,7 @@ dataForTesting.dataLen = length(spstest);
 dataForTesting.spikesTrain = spstest;
 
 % set options for optimizatiom problem
-opts = optimset('Gradobj','on','Hessian','on','display','iter-detailed');
+opts = optimset('Gradobj','on','Hessian','on','display','off');
 
 % Set start parameters for the optimization problem
 cellPostSpike =  zeros(1,numOfBaseVectors * numOfCoupledNeurons);

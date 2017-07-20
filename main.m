@@ -40,7 +40,7 @@ for i = 1:length(coupledNeurons)
     GLM_Partial_NeuronParameters(i).couplingFilters = result_GLM_Partial.couplingFilters;
     
     NeuronParameters(i).expStimulusFilter = realSTA;
-    NeuronParameters(i).neuronIndex = coupledNeurons(i)
+    NeuronParameters(i).neuronIndex = coupledNeurons(i);
     NeuronParameters(i).coupledNeurons = coupledNeurons;
 end
 save('NeuronParameters.mat', 'NeuronParameters');
