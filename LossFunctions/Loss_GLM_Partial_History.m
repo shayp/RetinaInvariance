@@ -15,10 +15,10 @@ spikesTrain = dataForLearnning.spikesTrain;
 nsp = sum(dataForLearnning.spikesTrain);
 
 % Extract some other stuff we'll use a lot
-spikeHistoryDesignMatrix = dataForLearnning.spikeHistoryDesignMatrix;    % spike history design matrix
+spikeHistoryDesignMatrix = dataForLearnning.spikeHistoryDesignMatrix';    % spike history design matrix
 
 % -------- Compute sum of filter reponses -----------------------
- linearFilter = constantStimulusProjection + spikeHistoryDesignMatrix * postspikehistoryFilters'; 
+linearFilter = constantStimulusProjection + spikeHistoryDesignMatrix * postspikehistoryFilters; 
  linearFilter = linearFilter + meanFiringRate;
 
  % ---------  Compute output of nonlinearity  ------------------------

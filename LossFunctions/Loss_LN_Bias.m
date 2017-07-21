@@ -7,7 +7,7 @@ function [logli, dL, H, Hk, Hkb, Hb] = Loss_LN_Bias(learnedParameters,dataForLea
 stimulusFilterSize = dataForLearnning.stimulusFiltetSize;
 % absolute bin size for spike train (in sec)
 binSizeInSecond = dataForLearnning.binSizeInSecond;
-
+interpMatrix = dataForLearnning.interpMatrix;
 % Unpack GLM prs;
 stimulusFilter = learnedParameters(1:stimulusFilterSize);
 meanFiringRate = learnedParameters(end);
@@ -19,8 +19,7 @@ stimulusDesignMatrix = dataForLearnning.stimulusDesignMatrix; % stimulus design 
 dataLen = dataForLearnning.dataLen;   % number of bins in spike train vector
 
 % -------- Compute sum of filter reponses -----------------------
-
- linearFilter = stimulusDesignMatrix * stimulusFilter; 
+ linearFilter = interpMatrix * (stimulusDesignMatrix * stimulusFilter); 
  linearFilter = linearFilter + meanFiringRate;
 
  % ---------  Compute output of nonlinearity  ------------------------
@@ -34,12 +33,12 @@ logli = Trm0 + Trm1;
 % ---------  Compute Gradient -----------------
 if (nargout > 1)
     % Non-spiking terms (Term 1)
-    dLdStimulusFilter0 = stimulusDesignMatrix' * expValue;
+    dLdStimulusFilter0 = (expValue' * interpMatrix * stimulusDesignMatrix)';
    
     dLdMeanFiringRate0 = sum(expValue);
         
     % Spiking terms (Term 2)
-    dLdStimulusFilter1 = stimulusDesignMatrix' * spikesTrain;
+    dLdStimulusFilter1 = (interpMatrix * stimulusDesignMatrix)' * spikesTrain;
     
     dLdMeanFiringRate1 = nsp;
     
@@ -50,11 +49,11 @@ if (nargout > 1)
     dL = [dLdStimulusFilter' dLdMeanFiringRate];
 end
  if (nargout > 2)
-    ddrrdiag = spdiags(expValue, 0, dataLen, dataLen); 
-    Hk = stimulusDesignMatrix' * bsxfun(@times,stimulusDesignMatrix,expValue) * binSizeInSecond;
+    rrdiag = spdiags(expValue, 0, dataLen, dataLen); 
+    hInterp = rrdiag * interpMatrix;
+    Hk = (stimulusDesignMatrix' * (interpMatrix' * hInterp) * stimulusDesignMatrix) * binSizeInSecond;
     Hb = dLdMeanFiringRate0 * binSizeInSecond;
-    Hkb = (sum(ddrrdiag,1) * stimulusDesignMatrix)' * binSizeInSecond;
+    Hkb = (sum(hInterp,1) * stimulusDesignMatrix)' * binSizeInSecond;
     H = [[Hk Hkb]; [Hkb' Hb]];
-
  end
 end

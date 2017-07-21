@@ -6,15 +6,18 @@ function [logli, dL, H] = Loss_LN__NoBias(learnedParameters,dataForLearnning)
 % absolute bin size for spike train (in sec)
 binSizeInSecond = dataForLearnning.binSizeInSecond;    
 
+interpMatrix = dataForLearnning.interpMatrix;
+
 % Unpack LN params;
 stimulusFilter = learnedParameters;
 spikesTrain = dataForLearnning.spikesTrain;
+dataLen = dataForLearnning.dataLen;   % number of bins in spike train vector
 
 % Extract some other stuff we'll use a lot
 stimulusDesignMatrix = dataForLearnning.stimulusDesignMatrix; % stimulus design matrix
 
 % -------- Compute sum of filter reponses -----------------------
- linearFilter = stimulusDesignMatrix*stimulusFilter;
+ linearFilter = interpMatrix * (stimulusDesignMatrix * stimulusFilter);
 % ---------  Compute output of nonlinearity  ------------------------
 expValue = exp(linearFilter) * binSizeInSecond;
 
@@ -27,10 +30,10 @@ logli = Trm0 + Trm1;
 if (nargout > 1)
     
     % Non-spiking terms (Term 1)
-    dLdStimulusFilter0 = stimulusDesignMatrix' * expValue;
+    dLdStimulusFilter0 = (expValue' * interpMatrix * stimulusDesignMatrix)';
     
     % Spiking terms (Term 2)
-    dLdStimulusFilter1 = stimulusDesignMatrix' * spikesTrain;
+    dLdStimulusFilter1 = (interpMatrix * stimulusDesignMatrix)' * spikesTrain;
     
     % Combine terms
     dLdStimulusFilter = dLdStimulusFilter0  - dLdStimulusFilter1;
@@ -39,7 +42,9 @@ if (nargout > 1)
 end
 
  if (nargout > 2)
-   H = stimulusDesignMatrix' * bsxfun(@times,stimulusDesignMatrix,expValue);
+    rrdiag = spdiags(expValue, 0, dataLen, dataLen); 
+    hInterp = rrdiag * interpMatrix;
+    H = (stimulusDesignMatrix' * (interpMatrix' * hInterp) * stimulusDesignMatrix) * binSizeInSecond;
  end
  
 end
