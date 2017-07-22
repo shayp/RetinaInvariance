@@ -4,55 +4,15 @@ clear all;
 datdir = './';  
 load([datdir, 'Stim']);    
 load([datdir,'stimtimes']); 
-load([datdir, 'SpTimes']); 
-load ('repeatStimulusTimes');    
-load ('RepStimulusExtended');
-load ('RepSpTimes');    
-load('sortedQualityInd');
-ncells = length(SpTimes);
-numOfRepeats = 200;
-choosedNeuron = randi(100, 1, 1);
-sortedQualityInd(choosedNeuron)
-coupledNeurons = [sortedQualityInd(choosedNeuron)];
+load([datdir, 'SpTimes']);    
+
 %coupledNeurons = [33];
 numOfNeurons = length(coupledNeurons);
 wantedSampleFactor = 20;
-%%
-for i = 1:length(coupledNeurons)
-    [result_GLM_Full, result_GLM_Partial, result_LN, deltaT, realSTA] = runGLM(coupledNeurons(i), Stim, stimtimes, SpTimes, coupledNeurons);
-    
-    stimulusFilterLength = length(realSTA);
-    couplingFilterLength = size(result_GLM_Full.couplingFilters,2);
 
-    GLM_Full_NeuronParameters(i).neuronIndex = coupledNeurons(i);
-    GLM_Partial_NeuronParameters(i).neuronIndex = coupledNeurons(i);
-    LN_NeuronParameters(i).neuronIndex = coupledNeurons(i);
-
-    GLM_Full_NeuronParameters(i).stimulusFilter = result_GLM_Full.StimulusFilter;
-    GLM_Partial_NeuronParameters(i).stimulusFilter = result_GLM_Partial.StimulusFilter;
-    LN_NeuronParameters(i).stimulusFilter = result_LN.StimulusFilter;
-    
-    GLM_Full_NeuronParameters(i).meanFiringRate = result_GLM_Full.meanFiringRate;
-    GLM_Partial_NeuronParameters(i).meanFiringRate = result_GLM_Partial.meanFiringRate;
-    LN_NeuronParameters(i).meanFiringRate = result_LN.meanFiringRate;
-
-    GLM_Full_NeuronParameters(i).couplingFilters = result_GLM_Full.couplingFilters;
-    GLM_Partial_NeuronParameters(i).couplingFilters = result_GLM_Partial.couplingFilters;
-    
-    NeuronParameters(i).expStimulusFilter = realSTA;
-    NeuronParameters(i).neuronIndex = coupledNeurons(i);
-    NeuronParameters(i).coupledNeurons = coupledNeurons;
-end
-save('NeuronParameters.mat', 'NeuronParameters');
-save('globalParams.mat', 'stimulusFilterLength', 'couplingFilterLength', 'deltaT', 'numOfNeurons');
 %% Repeat stimulus
 load('globalParams.mat');
 load('NeuronParameters.mat');
-for i = 1:numOfNeurons
-    NeuronParameters(i).scaledRepSpikes  = shrinkRepeatSpikes(repeatStimulusTimes, RepSpTimes(coupledNeurons(i)).sp, wantedSampleFactor);
-end
-
-scaledRepStimulus = ShrinkRepeatStimilus(RepStimulusExtended, repeatStimulusTimes, wantedSampleFactor);
 
 for i = 1:numOfNeurons
     GLM_Full_NeuronParameters(i).simulation = zeros(numOfRepeats, length(scaledRepStimulus));
