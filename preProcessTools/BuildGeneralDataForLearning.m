@@ -6,7 +6,7 @@ stimulus = changeStimulusRsolution(Stim(1:end - 1),stimtimes(1:end -1), stimulus
 save('stimulus', 'stimulus');
 
 % Get the fine stimulus resolution(Just for calculating the STA)
-fineStimulus = changeStimulusRsolution(Stim,stimtimes, spikesWantedSampFactor);
+fineStimulus = changeStimulusResolution(Stim,stimtimes, spikesWantedSampFactor);
 
 lastIndex = length(stimulus) * stimulusWantedSampleFactor;
 
