@@ -1,9 +1,9 @@
-datdir = './';  
+load( 'Stim');    
+load('stimtimes'); 
+load('SpTimes'); 
+addpath('preProcessTools');
 defineGlobalParameters();
-load([datdir, 'Stim']);    
-load([datdir,'stimtimes']); 
-load([datdir, 'SpTimes']); 
-load([datdir, 'globalParams']); 
+load('globalParams'); 
 
 % Build general data for training(Spike train, stimulus, stimulus design
 % matrix)

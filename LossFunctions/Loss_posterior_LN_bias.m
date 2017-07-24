@@ -26,16 +26,15 @@ switch nargout
         [negLP,grad] = negloglifun(prs);
         negLP = negLP  + .5 * linearFilter' * Cinv * linearFilter;
         grad(1:linearFilterLength) = grad(1:linearFilterLength) + (Cinv * linearFilter)';
-        grad(1) = 0;
-
+        grad(linearFilterLength) = 0;
     case 3  % evaluate function and gradient
         [negLP,grad,H, Hk, Hkb, Hb] = negloglifun(prs);
         negLP = negLP  + .5 * linearFilter' * Cinv * linearFilter;
         grad(1:linearFilterLength) = grad(1:linearFilterLength)  + (Cinv * linearFilter)';
-        grad(1) = 0;
+        grad(linearFilterLength) = 0;
         Hk = Hk + Cinv;
-        Hk(1,:) = 0;
-        Hk(:,1) = 0;
-        Hkb(1,:) = 0;
+        Hk(linearFilterLength,:) = 0;
+        Hk(:,linearFilterLength) = 0;
+        Hkb(linearFilterLength,:) = 0;
         H = [[Hk Hkb]; [Hkb' Hb]];
 end

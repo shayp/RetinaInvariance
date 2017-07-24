@@ -1,5 +1,4 @@
 function learnAndPrediectForNetworkConfiguration(neuronsInNetwork, scaledRepStimulus)
-    load('sortedQualityInd');
     load( 'SpTimes'); 
     load ('repeatStimulusTimes');    
     load ('RepStimulusExtended');
@@ -9,13 +8,17 @@ function learnAndPrediectForNetworkConfiguration(neuronsInNetwork, scaledRepStim
 
     numOfNeurons = length(neuronsInNetwork);
     learnedParameters = learnModelsParameters(neuronsInNetwork);
-    NeuronParameters = getRepStimulusData(neuronsInNetwork, repeatStimulusTimes, RepSpTimes, wantedSampleFactor, RepStimulusExtended);
+    NeuronParameters = getRepStimulusData(neuronsInNetwork, repeatStimulusTimes, RepSpTimes, spikesWantedSampFactor, RepStimulusExtended);
     
     for i = 1:numOfNeurons
+        NeuronParameters(i).neuronsInNetwork = neuronsInNetwork;
+        
+        NeuronParameters(i).neuronIndex = learnedParameters(i).neuronNumber;
         glmFullParams(i).neuronIndex = learnedParameters(i).neuronNumber;
         glmPartialParams(i).neuronIndex = learnedParameters(i).neuronNumber;
         lnParams(i).neuronIndex = learnedParameters(i).neuronNumber;
 
+        NeuronParameters(i).stimulusFilter = learnedParameters(i).stimulusFilter;
         glmFullParams(i).stimulusFilter = learnedParameters(i).fullGLMParams.StimulusFilter;
         glmPartialParams(i).stimulusFilter = learnedParameters(i).partialGLMParams.StimulusFilter;
         lnParams(i).stimulusFilter = learnedParameters(i).lnOptParams.StimulusFilter;
@@ -37,12 +40,12 @@ function learnAndPrediectForNetworkConfiguration(neuronsInNetwork, scaledRepStim
         response_GLM_Full = RunSimulation(numOfNeurons, scaledRepStimulus, glmFullParams, stimulusFilterSizeForSimulation, baseVectorLength, deltaT, 1);
         responseGLM_GLM_Partial = RunSimulation(numOfNeurons, scaledRepStimulus, glmPartialParams, stimulusFilterSizeForSimulation, baseVectorLength, deltaT , 1);
         response_LN = RunSimulation(numOfNeurons, scaledRepStimulus, lnParams, stimulusFilterSizeForSimulation, baseVectorLength, deltaT, 0);
-    end
-    
-    for i = 1:numOfNeurons
-        NeuronParameters(i).GLMFullSimulation(j,:) =  response_GLM_Full(i,:);
-        NeuronParameters(i).GLMPartialSimulation(j,:) =  responseGLM_GLM_Partial(i,:);
-        NeuronParameters(i).LNSimulation(j,:) =  response_LN(i,:);
+       
+        for i = 1:numOfNeurons
+            NeuronParameters(i).GLMFullSimulation(j,:) =  response_GLM_Full(i,:);
+            NeuronParameters(i).GLMPartialSimulation(j,:) =  responseGLM_GLM_Partial(i,:);
+            NeuronParameters(i).LNSimulation(j,:) =  response_LN(i,:);
+        end
     end
 
     numbrOfBins = 10;
@@ -71,6 +74,6 @@ function learnAndPrediectForNetworkConfiguration(neuronsInNetwork, scaledRepStim
         NeuronParameters(i).correaltionVector = correaltionVector;
         NeuronParameters(i).spikeRateCorrelation = [glmPartialCorrelation glmFullCorrelation lnCorrelation];
     end
-    save('FinalNeuronParameters.mat', 'NeuronParameters', 'GLM_Full_NeuronParameters', 'GLM_Partial_NeuronParameters', 'LN_NeuronParameters');
-    plotResults();
+    save('FinalNeuronParameters.mat', 'NeuronParameters', 'glmFullParams', 'glmPartialParams', 'lnParams');
+    plotResults(length(neuronsInNetwork));
 end

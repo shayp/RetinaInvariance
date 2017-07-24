@@ -39,13 +39,24 @@ function neuronParameters = learnModelsParameters(neuronsInNetwork)
         runLearningModels(trainStimulusDesignMatrix, testStimulusDesignMatrix,...
         trainSpikeHistoryDesignMatrix, testSpikeHistoryDesignMatrix,...
         interpMatrixTrain, interpMatrixTest, trainSpikesTrain, testSpikesTrain, stimulusFilterParamsSize,...
-        binsInSecond,initStimulusFilter, numOfNeurons, numOfBaseVectors, postSpikeBaseVectors)
+        binsInSecond,initStimulusFilter, numOfNeurons, numOfBaseVectors, postSpikeBaseVectors, stimulusFilterSizeForSimulation);
     
         neuronParameters(i).neuronNumber = neuronsInNetwork(i);
-        neuronParameters(i).stimulusFilter = initStimulusFilter;
+        neuronParameters(i).stimulusFilter = fineStimulusFilters(:,neuronsInNetwork(i));
         neuronParameters(i).fullGLMParams = result_GLM_Full;
         neuronParameters(i).partialGLMParams = result_GLM_Partial;
         neuronParameters(i).lnOptParams = result_LN;      
     end
     
+% timeSeries = linspace(-stimulusFilterSizeForSimulation * deltaT, 0, stimulusFilterSizeForSimulation);
+% figure();
+% plot(timeSeries, neuronParameters(1).stimulusFilter,...
+%      timeSeries, neuronParameters(1).lnOptParams.StimulusFilter,...
+%      timeSeries, neuronParameters(1).fullGLMParams.StimulusFilter,...
+%      timeSeries, neuronParameters(1).partialGLMParams.StimulusFilter);
+% legend('STA', 'LN', 'GLM Full', 'GLM Partial');
+% xlabel('Time before spike(s)');
+% ylabel('intensity');
+% title('Choosen stimulus filter(after resize):');
+% drawnow;
 end

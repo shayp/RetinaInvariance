@@ -1,0 +1,3 @@
+%% RunAll
+runPreProcessing
+learnAndPredictAllNeuronsWithHistory

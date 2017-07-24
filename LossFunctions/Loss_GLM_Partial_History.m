@@ -25,7 +25,7 @@ linearFilter = constantStimulusProjection + spikeHistoryDesignMatrix * postspike
 expValue = exp(linearFilter);
 
 % ---------  Compute log-likelihood ---------------------------------
-Trm0 = sum(expValue)* binSizeInSecond;  % non-spike term
+Trm0 = sum(expValue) * binSizeInSecond;  % non-spike term
 Trm1 =  -linearFilter' * spikesTrain; % spike term
 logli = Trm0 + Trm1;
 
@@ -34,7 +34,7 @@ if (nargout > 1)
     
     dLdMeanFiringRate0 = sum(expValue);
     
-    dLdSpikeHistoryFilter0 = spikeHistoryDesignMatrix' * expValue;
+    dLdSpikeHistoryFilter0 = (spikeHistoryDesignMatrix' * expValue);
     
     dLdMeanFiringRate1 = nsp;
     dLdSpikeHistoryFilter1 = spikeHistoryDesignMatrix' * spikesTrain;

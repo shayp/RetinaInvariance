@@ -19,10 +19,10 @@ stimulusDesignMatrix = dataForLearnning.stimulusDesignMatrix; % stimulus design 
 % -------- Compute sum of filter reponses -----------------------
  linearFilter = interpMatrix * (stimulusDesignMatrix * stimulusFilter);
 % ---------  Compute output of nonlinearity  ------------------------
-expValue = exp(linearFilter) * binSizeInSecond;
+expValue = exp(linearFilter);
 
 % ---------  Compute log-likelihood ---------------------------------
-Trm0 = sum(expValue);  % non-spike term
+Trm0 = sum(expValue) * binSizeInSecond;  % non-spike term
 Trm1 = -linearFilter' * spikesTrain; % spike term
 logli = Trm0 + Trm1;
 
@@ -33,10 +33,10 @@ if (nargout > 1)
     dLdStimulusFilter0 = (expValue' * interpMatrix * stimulusDesignMatrix)';
     
     % Spiking terms (Term 2)
-    dLdStimulusFilter1 = (interpMatrix * stimulusDesignMatrix)' * spikesTrain;
-    
+    dLdStimulusFilter1 = (spikesTrain' * interpMatrix * stimulusDesignMatrix)';
+
     % Combine terms
-    dLdStimulusFilter = dLdStimulusFilter0  - dLdStimulusFilter1;
+    dLdStimulusFilter = dLdStimulusFilter0 *  binSizeInSecond - dLdStimulusFilter1;
     
     dL = dLdStimulusFilter';
 end

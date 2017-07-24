@@ -38,7 +38,7 @@ if (nargout > 1)
     dLdMeanFiringRate0 = sum(expValue);
         
     % Spiking terms (Term 2)
-    dLdStimulusFilter1 = (interpMatrix * stimulusDesignMatrix)' * spikesTrain;
+    dLdStimulusFilter1 = (spikesTrain' * interpMatrix * stimulusDesignMatrix)';
     
     dLdMeanFiringRate1 = nsp;
     

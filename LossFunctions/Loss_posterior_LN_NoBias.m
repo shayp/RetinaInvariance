@@ -24,11 +24,16 @@ switch nargout
         [negLP,grad] = negloglifun(prs);
         negLP = negloglifun(prs) + .5 * prs' * Cinv * prs;
         grad = grad +  (Cinv * prs)';
+        grad(end) = 0;
 
     case 3  % evaluate function and gradient
         [negLP,grad,H] = negloglifun(prs);
         negLP = negloglifun(prs) + .5 * prs' * Cinv * prs;
         grad = grad +  (Cinv * prs)';
+        grad(end) = 0;
         H  = H + Cinv;
+        H(end,:) = 0;
+        H(:, end) = 0;
+
 end
 

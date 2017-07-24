@@ -2,7 +2,7 @@ function [spikes, stimulus, stimulusDesignMatrix, postSpikeBaseVectors, spikeHis
     spikesWantedSampFactor, stimulusWantedSampleFactor, numOfBaseVectors, baseVectorLength)
 load('globalParams'); 
 
-stimulus = changeStimulusRsolution(Stim(1:end - 1),stimtimes(1:end -1), stimulusWantedSampleFactor);
+stimulus = changeStimulusResolution(Stim(1:end - 1),stimtimes(1:end -1), stimulusWantedSampleFactor);
 save('stimulus', 'stimulus');
 
 % Get the fine stimulus resolution(Just for calculating the STA)
