@@ -3,10 +3,9 @@ function [spikes, stimulus, stimulusDesignMatrix, postSpikeBaseVectors, spikeHis
 load('globalParams'); 
 
 stimulus = changeStimulusResolution(Stim(1:end - 1),stimtimes(1:end -1), stimulusWantedSampleFactor);
-save('stimulus', 'stimulus');
 
-% Get the fine stimulus resolution(Just for calculating the STA)
-fineStimulus = changeStimulusResolution(Stim,stimtimes, spikesWantedSampFactor);
+
+
 
 lastIndex = length(stimulus) * stimulusWantedSampleFactor;
 
@@ -17,8 +16,14 @@ spikes = changeSpikeResolution(SpTimes, lastIndex, spikesWantedSampFactor);
 spikesLength = length(spikes(1).data);
 save('spikes', 'spikes');
 
+% Get the fine stimulus resolution(Just for calculating the STA)
+fineStimulus = changeStimulusResolution(Stim,stimtimes, spikesWantedSampFactor);
+
+fineStimulus = fineStimulus(1:spikesLength);
+save('stimulus', 'stimulus', 'fineStimulus');
+
 % Calculate the fine stimulus DesignMatrix(For STA only)
-fineStimulusDesignMatrix = buildStimulusDesignMatrix(stimulusFilterParamsSize * (stimulusWantedSampleFactor / spikesWantedSampFactor), fineStimulus(1:spikesLength));
+fineStimulusDesignMatrix = buildStimulusDesignMatrix(stimulusFilterParamsSize * (stimulusWantedSampleFactor / spikesWantedSampFactor), fineStimulus);
 
 [stimlusFilters, fineStimulusFilters] = getStimuliusFilterForAllCells(spikes, fineStimulusDesignMatrix, stimulusFilterParamsSize);
 save('stimlusFilters', 'stimlusFilters', 'fineStimulusFilters');

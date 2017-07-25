@@ -4,7 +4,9 @@ function neuronParameters = learnModelsParameters(neuronsInNetwork)
     load('stimlusFilters');
     load('spikes');
     load('postSpikeBaseVectors');
-    
+    load('spikes');
+    load('stimlusFilters');
+    load('stimulus');
     numOfNeurons = length(neuronsInNetwork);
     
     % get train and test design matrix
@@ -34,18 +36,24 @@ function neuronParameters = learnModelsParameters(neuronsInNetwork)
         % Get current neuron STA filter
         initStimulusFilter = realStimulusFilters(:,i);
         
-        % Learn models for current neuron
+        % Learn optimization models for current neuron
         [result_GLM_Full, result_GLM_Partial, result_LN] = ...
         runLearningModels(trainStimulusDesignMatrix, testStimulusDesignMatrix,...
         trainSpikeHistoryDesignMatrix, testSpikeHistoryDesignMatrix,...
         interpMatrixTrain, interpMatrixTest, trainSpikesTrain, testSpikesTrain, stimulusFilterParamsSize,...
         binsInSecond,initStimulusFilter, numOfNeurons, numOfBaseVectors, postSpikeBaseVectors, stimulusFilterSizeForSimulation);
     
+        % LN Busgang learning
+        [expFunction, xData,yData] = runLNBusgang(fineStimulusFilters(:,neuronsInNetwork(i)), fineStimulus,  spikes(neuronsInNetwork(i)).data, windowSizeForFiringRate, 20);
+    
         neuronParameters(i).neuronNumber = neuronsInNetwork(i);
         neuronParameters(i).stimulusFilter = fineStimulusFilters(:,neuronsInNetwork(i));
         neuronParameters(i).fullGLMParams = result_GLM_Full;
         neuronParameters(i).partialGLMParams = result_GLM_Partial;
-        neuronParameters(i).lnOptParams = result_LN;      
+        neuronParameters(i).lnOptParams = result_LN;
+        neuronParameters(i).lnBusgang.expFunction = expFunction;
+        neuronParameters(i).lnBusgang.xData = xData;
+        neuronParameters(i).lnBusgang.yData = yData;
     end
     
 % timeSeries = linspace(-stimulusFilterSizeForSimulation * deltaT, 0, stimulusFilterSizeForSimulation);

@@ -30,8 +30,8 @@ dataForTesting.interpMatrix = interpMatrixTest;
 opts = optimset('Gradobj','on','Hessian','on','display','off');
 
 % Set start parameters for the optimization problem
-cellPostSpike =  0.0001 * ones(size(trainSpikeHistoryDesignMatrix,1), 1);
-meanFiringRate = 0.0001;
+cellPostSpike =  zeros(size(trainSpikeHistoryDesignMatrix,1), 1);
+meanFiringRate = 0;
 
 % This matrix computes differences between adjacent coeffs
 Dx1 = spdiags(ones(stimulusFilterParamsSize,1)*[-1 1],0:1,stimulusFilterParamsSize - 1,stimulusFilterParamsSize);
@@ -40,13 +40,14 @@ Dx = Dx1'*Dx1;
 % Select lambda smoothing penalty by cross-validation 
  % grid of lambda values (ridge parameters)
 lambdavals = (2).^(6:17);
+lambdavals = (2).^(14);
 nlambda = length(lambdavals);
-
 
 %% Run optimization problem with diffrent lambdas
 params_LN_Bias = [initStimulusFilter' meanFiringRate]';
 params_GLM_Full = [initStimulusFilter' cellPostSpike' meanFiringRate]';
-params_GLM_Partial = [cellPostSpike' meanFiringRate]';
+params_GLM_Partial_History = cellPostSpike;
+params_GLM_Partial_Bias = meanFiringRate;
 params_LN_No_Bias = initStimulusFilter;
 
 learned_LN_Bias = zeros(length(params_LN_Bias),nlambda);
@@ -63,7 +64,7 @@ LL_LN_Train = zeros(nlambda,1);
 LL_LN_Test = zeros(nlambda,1);
 
 timeSeries = linspace(-stimulusFilterSizeForSimulation * deltaT, 0, stimulusFilterParamsSize);
-figure();
+%figure();
 % Run for each lambda, and learn the the parameters
 for i = 1:nlambda
     currentIteration = i
@@ -93,23 +94,26 @@ for i = 1:nlambda
     dataForLearnning.stimulusProjection = interpMatrixTrain * (trainStimulusDesignMatrix *  learned_LN_No_Bias(:,i));
     dataForTesting.stimulusProjection = interpMatrixTest * (testStimulusDesignMatrix *  learned_LN_No_Bias(:,i));
     lossfun = @(prs)Loss_GLM_Partial_History(prs,dataForLearnning);
-    current_params_GLM_Partial = fminunc(lossfun,params_GLM_Partial,opts);
-    learned_GLM_Partial(:,i) = [learned_LN_No_Bias(:,i)' current_params_GLM_Partial']';
-    LL_GLM_Partial_Train(i) = Loss_GLM_Partial_History(current_params_GLM_Partial, dataForLearnning);
-    LL_GLM_Partial_Test(i) = Loss_GLM_Partial_History(current_params_GLM_Partial, dataForTesting);
+    current_params_GLM_Partial_history = fminunc(lossfun,params_GLM_Partial_History,opts);
+    dataForLearnning.postSpikeHistoryVector = trainSpikeHistoryDesignMatrix' * current_params_GLM_Partial_history;
+    lossfun = @(prs)Loss_GLM_Partial_Bias(prs,dataForLearnning);
+    current_params_GLM_Partial_bias = fminunc(lossfun,params_GLM_Partial_Bias,opts);
+    learned_GLM_Partial(:,i) = [learned_LN_No_Bias(:,i)' current_params_GLM_Partial_history' current_params_GLM_Partial_bias];
+    LL_GLM_Partial_Train(i) = Loss_GLM_Full(learned_GLM_Partial(:,i), dataForLearnning);
+    LL_GLM_Partial_Test(i) = Loss_GLM_Full(learned_GLM_Partial(:,i), dataForTesting);
 
-    clf;
-    hold on;
-    plot(timeSeries, initStimulusFilter,...
-         timeSeries, learned_LN_Bias(1:stimulusFilterParamsSize,i),...
-         timeSeries, learned_GLM_Full(1:stimulusFilterParamsSize,i),...
-         timeSeries, learned_LN_No_Bias(1:stimulusFilterParamsSize,i));
-    legend('STA', 'LN', 'GLM Full', 'GLM Partial');
-    xlabel('Time before spike(s)');
-    ylabel('intensity');
-    title(['Stimulus filter estimator - iteration = :'  num2str(i)]);
-    drawnow;
-    hold off;
+%     clf;
+%     hold on;
+%     plot(timeSeries, initStimulusFilter,...
+%          timeSeries, learned_LN_Bias(1:stimulusFilterParamsSize,i),...
+%          timeSeries, learned_GLM_Full(1:stimulusFilterParamsSize,i),...
+%          timeSeries, learned_LN_No_Bias(1:stimulusFilterParamsSize,i));
+%     legend('STA', 'LN', 'GLM Full', 'GLM Partial');
+%     xlabel('Time before spike(s)');
+%     ylabel('intensity');
+%     title(['Stimulus filter estimator - iteration = :'  num2str(i)]);
+%     drawnow;
+%     hold off;
 end
 
 % Get the minimum log likelihood index
@@ -139,15 +143,4 @@ result_GLM_Partial.meanFiringRate = bestParams_GLM_Partial(end);
 
 result_LN.StimulusFilter = interp1(coarseTimeScale, bestParams_LN(1:stimulusFilterParamsSize), fineTimeScale, 'spline');
 result_LN.meanFiringRate = bestParams_LN(end);
-% figure();
-% plot(timeSeries, initStimulusFilter,...
-%      timeSeries, bestParams_LN(1:stimulusFilterParamsSize),...
-%      timeSeries, bestParams_GLM_Full(1:stimulusFilterParamsSize),...
-%      timeSeries, bestParams_GLM_Partial(1:stimulusFilterParamsSize));
-% legend('STA', 'LN', 'GLM Full', 'GLM Partial');
-% xlabel('Time before spike(s)');
-% ylabel('intensity');
-% title('Choosen stimulus filter(before resize):');
-% drawnow;
-
 end
