@@ -19,10 +19,6 @@ while currentBin <= simulationLength
     iinxt = currentBin:min(currentBin+nbinsPerEval-1,simulationLength);
     nii = length(iinxt);  % Number of bins
     rrnxt =  exp(linearValue(:,iinxt)) * deltaT; % Cond Intensity
-    for i = 1:numOfNeurons
-            maxIndex = find(rrnxt(neuronIndex,:) >3);
-            rrnxt(neuronIndex,maxIndex) = 3;
-    end
 
     rrcum = cumsum(rrnxt'+[rprev;zeros(nii-1,numOfNeurons)],1);  % Cumulative intensity
     if all(tspnext >= rrcum(end,:)) % No spike in this window

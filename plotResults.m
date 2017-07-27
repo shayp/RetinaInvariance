@@ -20,8 +20,8 @@ fig = figure('visible', 'on');
     ylabel('intensity');
     title(['Stimulus filter estimator - Neuron: ' num2str(NeuronParameters(i).neuronIndex)]);
     
-    X = -2:0.001:1;
-    Y = exp(X);
+    X = -10:0.1:2;
+    Y = exp(X) * deltaT;
     % Plot non lineartity
     subplot(numofRows,2,2);
     plot(X, exp(lnParams(i).meanFiringRate) * Y,...
@@ -69,8 +69,7 @@ fig = figure('visible', 'on');
              spikeRateTime,NeuronParameters(i).lnSimulatedSpikeRate,...
              spikeRateTime,NeuronParameters(i).glmPartialSimulatedSpikeRate,...
              spikeRateTime,NeuronParameters(i).glmFullSimulatedSpikeRate,...
-             spikeRateTime,NeuronParameters(i).lnBusgangSpikeRate,...
-             spikeRateTime,NeuronParameters(i).partSpikeRate);
+             spikeRateTime,NeuronParameters(i).lnBusgangSpikeRate);
 
          title('Firing rate');
         legend('Experiment firing rate',...
@@ -78,11 +77,9 @@ fig = figure('visible', 'on');
             ['GLM partial R = ' num2str(NeuronParameters(i).spikeRateCorrelation(2))],...
             ['GLM Full R = ' num2str(NeuronParameters(i).spikeRateCorrelation(3))],...
             ['LN Busgang R = ' num2str(NeuronParameters(i).spikeRateCorrelation(4))],...
-            ['1/2 of experiment = ' num2str(NeuronParameters(i).spikeRateCorrelation(5))],...
             'location', 'bestoutside');
         xlabel('Time (s)');
         ylabel('Firing rate (spikes/sec) ');
-        savefig(fig,['./Graphs/Neuron_' num2str(NeuronParameters(i).neuronIndex) '_Results']);
         
         subplot(numofRows,2,numOfSubPlots);
         strNames = {'LN','GLM Partial','GLM Full', 'LN Busgang'};
@@ -90,5 +87,7 @@ fig = figure('visible', 'on');
         title('% Explained from 1/2 of experiment');
         set(gca, 'XTickLabel', strNames, 'XTick', 1:numel(strNames));
         
+        savefig(fig,['./Graphs/Neuron_' num2str(NeuronParameters(i).neuronIndex) '_Results']);
+
 end
 

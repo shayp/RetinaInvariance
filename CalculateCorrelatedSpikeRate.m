@@ -21,3 +21,5 @@ cutOut = ceil(spikeRateLength / 30)
 spikeRate(2,:) = circshift(spikeRate(2,:)',Leg)';
 correlation = corr2(spikeRate(1,:),spikeRate(2,:))
 correlation = corr2(spikeRate(1,cutOut:end - cutOut),spikeRate(2,cutOut:end - cutOut))
+
+spikeRate(2,:) = spikeRate(2,:) * (max(spikeRate(1,:)) / max(spikeRate(2,:)));

@@ -36,7 +36,7 @@ switch nargout
         grad(linearFilterLength) = 0;
         grad(1) = 0;
         Hk = Hk + Cinv;
-        Hk(linearFilterLength,:) = 0;
+         Hk(linearFilterLength,:) = 0;
         Hk(:,linearFilterLength) = 0;
         Hkb(linearFilterLength,:) = 0;
         Hkh(linearFilterLength,:) = 0;

@@ -11,8 +11,8 @@ binSizeInSecond = dataForLearnning.binSizeInSecond;
 
 % Unpack GLM prs;
 stimulusFilter = learnedParameters(1:stimulusFilterSize);
-postspikehistoryFilters = learnedParameters(stimulusFilterSize+1:end - 1);
-meanFiringRate = learnedParameters(end);
+postspikehistoryFilters = learnedParameters(stimulusFilterSize+2:end);
+meanFiringRate = learnedParameters(stimulusFilterSize + 1);
 interpMatrix = dataForLearnning.interpMatrix;
 
 spikesTrain = dataForLearnning.spikesTrain;
@@ -43,13 +43,13 @@ if (nargout > 1)
    
     dLdMeanFiringRate0 = sum(expValue);
     
-    dLdSpikeHistoryFilter0 = (spikeHistoryDesignMatrix' * expValue);
+    dLdSpikeHistoryFilter0 = (expValue' * spikeHistoryDesignMatrix)';
     
     % Spiking terms (Term 2)
     dLdStimulusFilter1 = (spikesTrain' * interpMatrix * stimulusDesignMatrix)';
     
     dLdMeanFiringRate1 = nsp;
-    dLdSpikeHistoryFilter1 = (spikeHistoryDesignMatrix' * spikesTrain);
+    dLdSpikeHistoryFilter1 = (spikesTrain' * spikeHistoryDesignMatrix)';
 
     % Combine terms
     dLdStimulusFilter = dLdStimulusFilter0 * binSizeInSecond  - dLdStimulusFilter1;
@@ -66,7 +66,7 @@ end
     Hk = (stimulusDesignMatrix' * (interpMatrix' * hInterp) * stimulusDesignMatrix) * binSizeInSecond;
     Hb = dLdMeanFiringRate0 * binSizeInSecond;
     Hkb = (sum(hInterp,1) * stimulusDesignMatrix)' * binSizeInSecond;
-    Hh = spikeHistoryDesignMatrix' * bsxfun(@times,spikeHistoryDesignMatrix,expValue) * binSizeInSecond;  % Hh (h filter)
+    Hh = (spikeHistoryDesignMatrix' * (bsxfun(@times,spikeHistoryDesignMatrix,expValue))) * binSizeInSecond;  % Hh (h filter)
     Hkh = ((spikeHistoryDesignMatrix'*hInterp)*stimulusDesignMatrix)' * binSizeInSecond;
     Hhb = (expValue' * spikeHistoryDesignMatrix)' * binSizeInSecond;
     H = [[Hk Hkb Hkh]; [Hkb' Hb Hhb']; [Hkh' Hhb Hh]];

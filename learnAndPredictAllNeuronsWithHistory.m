@@ -12,6 +12,6 @@ scaledRepStimulus = ShrinkRepeatStimilus(RepStimulusExtended, repeatStimulusTime
 %     neuronsInNetwork = [sortedQualityInd(i)]
 %     learnAndPrediectForNetworkConfiguration(neuronsInNetwork, scaledRepStimulus)
 % end
-neuronsInNetwork = [33]
+neuronsInNetwork = [162 167];
 learnAndPrediectForNetworkConfiguration(neuronsInNetwork, scaledRepStimulus)
 

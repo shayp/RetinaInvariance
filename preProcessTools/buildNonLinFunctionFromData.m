@@ -1,6 +1,5 @@
 function [sigCurveParams, xAxis,yAxis] = buildNonLinFunctionFromData(binnedStimulusConv, binnedSpikes, numofParameters)
-length(binnedSpikes)
-length(binnedStimulusConv)
+
 lengthOfExp = min(length(binnedSpikes), length(binnedStimulusConv));
 maxStimulusConv = max(binnedStimulusConv);
 minStimulusConv = min(binnedStimulusConv);
@@ -26,9 +25,9 @@ end
 
 cumlativeOfPoints = cumsum(hitNumner);
 maxIndexes = find(cumlativeOfPoints > 0.9 * lengthOfExp);
-
+%binnedStimulusSum(maxIndexes(1))
 initValue = [0, 0.1, 1, 1, 1, 0];
-[xAxis,yAxis,sigCurveParams] = fitSigmoidToData(binnedStimulusSum, binnedSpikesSum, -2,binnedStimulusSum(maxIndexes(1)), initValue);
+[xAxis,yAxis,sigCurveParams] = fitSigmoidToData(binnedStimulusSum, binnedSpikesSum, -6,100, initValue);
 
 % figure();
 % plot(binnedStimulusSum, binnedSpikesSum,'.', binnedStimulusSum, sigCurveParams(binnedStimulusSum));

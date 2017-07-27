@@ -33,7 +33,7 @@ switch nargout
         grad = grad +  (Cinv * prs)';
         grad(end) = 0;
         grad(1) = 0;
-        H  = H + Cinv;
+        H = H + Cinv;
         H(end,:) = 0;
         H(:, end) = 0;
         H(1,:) = 0;

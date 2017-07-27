@@ -42,6 +42,7 @@ function learnAndPrediectForNetworkConfiguration(neuronsInNetwork, scaledRepStim
     end
 
     for j = 1:numOfRepeats
+        
         % Full glm simulation
         response_GLM_Full = RunSimulation(numOfNeurons, scaledRepStimulus, glmFullParams, stimulusFilterSizeForSimulation, baseVectorLength, deltaT, 1);
         responseGLM_GLM_Partial = RunSimulation(numOfNeurons, scaledRepStimulus, glmPartialParams, stimulusFilterSizeForSimulation, baseVectorLength, deltaT , 1);
@@ -54,7 +55,7 @@ function learnAndPrediectForNetworkConfiguration(neuronsInNetwork, scaledRepStim
         end
     end
 
-    numbrOfBins = 40;
+    numbrOfBins = 10;
     for i = 1:numOfNeurons
         NeuronParameters(i).lnBusgangFiringRate = estimateLNBugangFiringRate(scaledRepStimulus, lnBusgangParams(i).stimulusFilter, lnBusgangParams(i).expFunction, windowSizeForFiringRate, deltaT);
         
@@ -72,7 +73,7 @@ function learnAndPrediectForNetworkConfiguration(neuronsInNetwork, scaledRepStim
         NeuronParameters(i).lnBusgangSpikeRate = lnBusgangSpikeRate(2,:);
         
         correaltionVector = zeros(6, numbrOfBins);
-        maxRealSpike = max(NeuronParameters(i).realSpikeRate) + 0.0001;
+        maxRealSpike = max(NeuronParameters(i).realSpikeRate);
         firingRateSpace = linspace(0, maxRealSpike, numbrOfBins + 1);
         for bin = 1:numbrOfBins
             wantedIndexes = find(NeuronParameters(i).realSpikeRate >= firingRateSpace(bin) & NeuronParameters(i).realSpikeRate < firingRateSpace(bin + 1));
