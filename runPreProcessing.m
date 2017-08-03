@@ -1,5 +1,5 @@
-load( 'Stim');    
-load('stimtimes'); 
+load( 'NonRepeatStim');    
+load('NonRepeatstimtimes'); 
 load('SpTimes'); 
 addpath('preProcessTools');
 defineGlobalParameters();

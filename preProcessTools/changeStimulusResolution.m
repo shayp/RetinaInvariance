@@ -5,5 +5,12 @@ function [stimulus] = changeStimulusResolution(stimulusVector,stimtimes, wantedS
         stimulusSampleVector(stimtimes(i):stimtimes(i + 1) - 1) = stimulusVector(i);
     end
     strech = ceil(lastStimulus / wantedSampFactor);
-    stimulus = imresize(stimulusSampleVector, [strech 1], 'nearest');
+    
+    stimulus = zeros(strech, 1);
+
+    for i = 1:strech - 1
+        stimulus(i) = mode(stimulusSampleVector((i - 1) * wantedSampFactor + 1: i * wantedSampFactor));
+    end
+    
+    stimulus(strech) = mode(stimulusSampleVector((strech - 1) * wantedSampFactor + 1 :end));
 end

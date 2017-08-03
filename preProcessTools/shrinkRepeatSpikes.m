@@ -1,4 +1,5 @@
 function scaledRepSpikes = shrinkRepeatSpikes(stimTimes, spikeTimes, wantedSampFactor)
+    numOfSpikes = length(spikeTimes);
     vectorLen = ceil((stimTimes(2) - stimTimes(1)) /  wantedSampFactor);
     numOfReturns = length(stimTimes);
     scaledRepSpikes = zeros(numOfReturns - 1,vectorLen);
@@ -13,6 +14,5 @@ function scaledRepSpikes = shrinkRepeatSpikes(stimTimes, spikeTimes, wantedSampF
         for j = 1:scaledLengthToUse - 1
             scaledRepSpikes(i,j) = sum(currentReturnSpike((j - 1) * wantedSampFactor + 1: j * wantedSampFactor));
         end
-        %scaledRepSpikes(i, scaledLengthToUse) = sum(currentReturnSpike((scaledLengthToUse - 1) * wantedSampFactor + 1: end));
     end
 end

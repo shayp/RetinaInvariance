@@ -11,4 +11,6 @@ for i = 1:numOfNeurons
     hold off;
     drawnow;
 end
+
+save('RFMatrix','RFMatrix');
 end

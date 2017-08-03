@@ -37,7 +37,7 @@ function neuronParameters = learnModelsParameters(neuronsInNetwork)
         initStimulusFilter = realStimulusFilters(:,i);
         
         % Learn optimization models for current neuron
-        [result_GLM_Full, result_GLM_Partial, result_LN] = ...
+        [result_GLM_Full, result_LN] = ...
         runLearningModels(trainStimulusDesignMatrix, testStimulusDesignMatrix,...
         trainSpikeHistoryDesignMatrix, testSpikeHistoryDesignMatrix,...
         interpMatrixTrain, interpMatrixTest, trainSpikesTrain, testSpikesTrain, stimulusFilterParamsSize,...
@@ -49,7 +49,7 @@ function neuronParameters = learnModelsParameters(neuronsInNetwork)
         neuronParameters(i).neuronNumber = neuronsInNetwork(i);
         neuronParameters(i).stimulusFilter = fineStimulusFilters(:,neuronsInNetwork(i));
         neuronParameters(i).fullGLMParams = result_GLM_Full;
-        neuronParameters(i).partialGLMParams = result_GLM_Partial;
+        %neuronParameters(i).partialGLMParams = result_GLM_Partial;
         neuronParameters(i).lnOptParams = result_LN;
         neuronParameters(i).lnBusgang.expFunction = expFunction;
         neuronParameters(i).lnBusgang.xData = xData;

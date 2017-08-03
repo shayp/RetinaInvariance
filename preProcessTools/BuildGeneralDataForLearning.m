@@ -33,6 +33,8 @@ save('stimlusFilters', 'stimlusFilters', 'fineStimulusFilters');
 
 % Change the resolution of the base vectors to be 80ms~
 postSpikeBaseVectors = imresize(originalBaseVectors, [baseVectorLength numOfBaseVectors]);
+figure();
+plot(postSpikeBaseVectors);drawnow;
 save('postSpikeBaseVectors', 'postSpikeBaseVectors','numOfBaseVectors');
 
 spikeHistoryData = getSpikeHistoryDataForNeurons(spikes, numOfBaseVectors, postSpikeBaseVectors);
