@@ -1,5 +1,5 @@
-function response = runSimulationPoisson(numOfNeurons, Stimulus, Filters, stimulusFilterLength, couplingFilterLength,deltaT, fCoupling)
-
+function response = runSimulationPoisson(numOfNeurons, Stimulus, Filters, stimulusFilterLength,deltaT, fCoupling)
+couplingFilterLength = size(Filters(1).couplingFilters,2);
 simulationLength = length(Stimulus);
 response = zeros(numOfNeurons, simulationLength);
 projected = zeros(numOfNeurons, simulationLength);

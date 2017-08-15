@@ -1,5 +1,5 @@
 function [spikes, stimulus, stimulusDesignMatrix, postSpikeBaseVectors, spikeHistoryData] = BuildGeneralDataForLearning(Stim, stimtimes, SpTimes,stimulusFilterParamsSize,...
-    spikesWantedSampFactor, stimulusWantedSampleFactor, numOfBaseVectors, baseVectorLength)
+    spikesWantedSampFactor, stimulusWantedSampleFactor, numOfBaseVectors)
 load('globalParams'); 
 
 stimulus = changeStimulusResolution(Stim(1:end - 1),stimtimes(1:end -1), stimulusWantedSampleFactor);
@@ -29,10 +29,8 @@ fineStimulusDesignMatrix = buildStimulusDesignMatrix(stimulusFilterParamsSize * 
 save('stimlusFilters', 'stimlusFilters', 'fineStimulusFilters');
 
 % build post spike BaseVectors
-[~, ~, originalBaseVectors] = buildBaseVectorsForPostSpikeAndCoupling(numOfBaseVectors,dt,hpeaks, b);
+[~, ~, postSpikeBaseVectors] = buildBaseVectorsForPostSpikeAndCoupling(numOfBaseVectors,dt,hpeaks, b, absoluterRefractory);
 
-% Change the resolution of the base vectors to be 80ms~
-postSpikeBaseVectors = imresize(originalBaseVectors, [baseVectorLength numOfBaseVectors]);
 figure();
 plot(postSpikeBaseVectors);drawnow;
 save('postSpikeBaseVectors', 'postSpikeBaseVectors','numOfBaseVectors');

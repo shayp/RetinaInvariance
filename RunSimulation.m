@@ -1,5 +1,9 @@
-function response = RunSimulation(numOfNeurons, Stimulus, neuronParameters, stimulusFilterLength, couplingFilterLength,deltaT, couplingFlag)
-maxFilterLength = max(stimulusFilterLength, couplingFilterLength);
+function response = RunSimulation(numOfNeurons, Stimulus, neuronParameters, stimulusFilterLength, deltaT, couplingFlag)
+if couplingFlag == 1
+    couplingFilterLength = size(neuronParameters(1).couplingFilters,2);
+else
+    couplingFilterLength = 1;
+end
 simulationLength = length(Stimulus);
 response = zeros(numOfNeurons, simulationLength);
 baseValue = zeros(numOfNeurons, simulationLength);
@@ -39,7 +43,7 @@ while currentBin <= simulationLength
             icell = spcells(ic);
             nsp(icell) = nsp(icell)+1;
             response(icell, ispk) = 1;
-            couplingValue(icell,iiPostSpk) = zeros(1,length(iiPostSpk));
+            %couplingValue(icell,iiPostSpk) = zeros(1,length(iiPostSpk));
             if couplingFlag == 1
                 for i = 1:numOfNeurons
                     couplingValue(i,iiPostSpk) = couplingValue(i,iiPostSpk) + neuronParameters(i).couplingFilters(icell,1:length(iiPostSpk));

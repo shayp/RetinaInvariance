@@ -1,4 +1,4 @@
-function [spikeRate, correlation] = CalculateCorrelatedSpikeRateBusgang(realNeuronData, simulatedNeuronData, windowSize)
+function [spikeRate, correlation, varExplain] = CalculateCorrelatedSpikeRateBusgang(realNeuronData, simulatedNeuronData, windowSize, dt)
 dataLength = size(realNeuronData,2);
 spikeRateLength = length(simulatedNeuronData);
 spikeRate = zeros(2, spikeRateLength);
@@ -10,8 +10,8 @@ for j = 1:spikeRateLength
        spikeRate(1,j) = spikeRate(1,j) + sum(realNeuronData(i, (j-1) * windowSize + 1: currentChange));
     end
 end
-spikeRate(1,:) = spikeRate(1,:) / (windowSize * repeatInExp);
-spikeRate(2,:) = spikeRate(2,:) / (windowSize);
+spikeRate(1,:) = spikeRate(1,:) /repeatInExp;
+spikeRate = spikeRate / (windowSize * dt);
 [vecCorrelation, vecLegs] = xcorr(spikeRate(1,:),spikeRate(2,:));
 [~, index] = max(vecCorrelation);
 Leg =  vecLegs(index)
@@ -19,4 +19,8 @@ cutOut = ceil(spikeRateLength / 30)
 spikeRate(2,:) = circshift(spikeRate(2,:)',Leg)';
 correlation = corr2(spikeRate(1,:),spikeRate(2,:))
 correlation = corr2(spikeRate(1,cutOut:end - cutOut),spikeRate(2,cutOut:end - cutOut))
-spikeRate(2,:) = spikeRate(2,:) * (max(spikeRate(1,:)) / max(spikeRate(2,:)));
+
+meanOfSpikesTrain =  mean(spikeRate(1,:));
+totalSumOfErrors = sum((spikeRate(2,:) - spikeRate(1,:)).^2);
+totalSumOfSquraes = sum((spikeRate(2,:) -meanOfSpikesTrain).^2);
+varExplain = 1 -totalSumOfErrors/totalSumOfSquraes;

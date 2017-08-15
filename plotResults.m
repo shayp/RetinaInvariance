@@ -40,7 +40,7 @@ for i = 1:numOfNeurons
         % Plot leaned spike history filter
         subplot(numofRowsFig1,2, j + 2);
         binsOfCouplingLength = length(glmFullParams(i).couplingFilters(j,:));
-        timeAfterSpike = linspace(0, binsOfCouplingLength / binsInSecond, binsOfCouplingLength);
+        timeAfterSpike = linspace(1 / binsInSecond, binsOfCouplingLength / binsInSecond, binsOfCouplingLength);
         plot(timeAfterSpike, exp(glmFullParams(i).couplingFilters(j,:)),...
              timeAfterSpike, ones(1, length(timeAfterSpike)), '--');
          legend('Full GLM','location', 'bestoutside');
@@ -77,22 +77,16 @@ for i = 1:numOfNeurons
              spikeRateTime,NeuronParameters(i).lnBusgangSpikeRate);
 
         title('Firing rate');
-        legend(['Experiment firing rate. R = ' num2str(NeuronParameters(i).spikeRateCorrelation(4))],...
-            ['LN R = ' num2str(NeuronParameters(i).spikeRateCorrelation(1))],...
-            ['GLM Full R = ' num2str(NeuronParameters(i).spikeRateCorrelation(2))],...
-            ['LN Busgang R = ' num2str(NeuronParameters(i).spikeRateCorrelation(3))],...
+        legend(['Experiment firing rate. R = ' num2str(NeuronParameters(i).spikeRateCorrelation(4), 2)],...
+            ['LN R = ' num2str(NeuronParameters(i).spikeRateCorrelation(1), 2) ' , Variance explained: ' num2str(NeuronParameters(i).varianceExplained(1) * 100, 2) '%'],...
+            ['GLM Full R = ' num2str(NeuronParameters(i).spikeRateCorrelation(2), 2) ' , Variance explained: ' num2str(NeuronParameters(i).varianceExplained(2) * 100, 2) '%'],...
+            ['LN Busgang R = ' num2str(NeuronParameters(i).spikeRateCorrelation(3), 2) ' , Variance explained: ' num2str(NeuronParameters(i).varianceExplained(3) * 100, 2) '%'],...
             'location', 'bestoutside');
         xlabel('Time (s)');
         ylabel('Firing rate (spikes/sec) ');
         xlim([spikeRateTime(startLimit) spikeRateTime(startLimit + 200)]);
         
-%         subplot(numofRowsFig2,2,3);
-%         strNames = {'LN','GLM Full', 'LN Busgang'};
-%         bar(NeuronParameters(i).perecentExplained)
-%         title(['% R Explained from 1/2 of experiment. R = ' num2str(NeuronParameters(i).spikeRateCorrelation(4))]);
-%         set(gca, 'XTickLabel', strNames, 'XTick', 1:numel(strNames));
-        
-         subplot(numofRowsFig2,2,3);
+         subplot(numofRowsFig2,2,4);
          for j = 1:mumOfRepeatsToPlot
              realRaster = find(NeuronParameters(i).scaledRepSpikes(j,:));
              ExpPoints = zeros(1, length(realRaster));
@@ -122,31 +116,35 @@ for i = 1:numOfNeurons
          title('Raster Plot');
          legend('Experiment data', 'LN Simulation','Full GLM Simulation','location', 'bestoutside');
 
-        subplot(numofRowsFig2,2,4);
-        [histRep, edgesRep] = histcounts(NeuronParameters(i).repISI);
-        histRep = histRep / length(NeuronParameters(i).repISI);
-        histRep = [histRep histRep(end)];
-        hold on;
-        stairs(edgesRep, histRep);
-        hold off;
+        subplot(numofRowsFig2,2,3);
+        maxRepISI = max(NeuronParameters(i).repISI);
+        repISIPr = zeros(maxRepISI, 1);
+        for j = 1:maxRepISI
+            repISIPr(j) = sum(NeuronParameters(i).repISI == j);
+        end
+        repISIPr = repISIPr / sum(repISIPr);
+        repISITimes = linspace(1 * deltaT, maxRepISI * deltaT, maxRepISI);
         
-        [histLN, edgesLN] = histcounts(NeuronParameters(i).LNISI);
-        histLN = histLN / length(NeuronParameters(i).LNISI);
-        histLN = [histLN histLN(end)];
-        hold on;
-        stairs(edgesLN, histLN);
-        hold off;
+        maxLnISI = max(NeuronParameters(i).LNISI);
+        LnISIPr = zeros(maxLnISI, 1);
+        for j = 1:maxLnISI
+            LnISIPr(j) = sum(NeuronParameters(i).LNISI == j);
+        end
+        LnISIPr = LnISIPr / sum(LnISIPr);
+        lnISITimes = linspace(1 * deltaT, maxLnISI * deltaT, maxLnISI);
         
+        maxGlmISI = max(NeuronParameters(i).GLMFullISI);
+        GlmISIPr = zeros(maxGlmISI, 1);
+        for j = 1:maxGlmISI
+            GlmISIPr(j) = sum(NeuronParameters(i).GLMFullISI == j);
+        end
+        GlmISIPr = GlmISIPr / sum(GlmISIPr);
+        glmISITimes = linspace(1 * deltaT, maxGlmISI * deltaT, maxGlmISI); 
         
-        [histGLMFull, edgesGLMFull] = histcounts(NeuronParameters(i).GLMFullISI);
-        histGLMFull = histGLMFull / length(NeuronParameters(i).GLMFullISI);
-        histGLMFull = [histGLMFull histGLMFull(end)];
-        hold on;
-        stairs(edgesGLMFull, histGLMFull);
-        hold off;
-         
+        plot(repISITimes, repISIPr, lnISITimes, LnISIPr, glmISITimes, GlmISIPr);
          legend('Experiment','LN ', 'Full GLM','location', 'bestoutside');
          title('Inter spike interval');
+         xlim([0 deltaT * 30])
         savefig(fig2,[filePath 'Neuron_' num2str(NeuronParameters(i).neuronIndex) '_Results']);
 end
 

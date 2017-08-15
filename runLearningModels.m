@@ -31,7 +31,13 @@ dataForTesting.interpMatrix = interpMatrixTest;
 opts = optimset('Gradobj','on','Hessian','on');
 
 % Set start parameters for the optimization problem
-cellPostSpike =   zeros(size(trainSpikeHistoryDesignMatrix,1), 1);
+%cellPostSpike =  -0.5 * ones(size(trainSpikeHistoryDesignMatrix,1), 1);
+%cellPostSpike = linspace(-5, -1, size(trainSpikeHistoryDesignMatrix,1));
+cellPostSpike =  zeros(size(trainSpikeHistoryDesignMatrix,1), 1);
+cellPostSpike(1) = -10;
+cellPostSpike(2) = -10;
+cellPostSpike(3) = -4;
+cellPostSpike(4) = -4;
 meanFiringRate = 0;
 
 % This matrix computes differences between adjacent coeffs
@@ -40,7 +46,7 @@ Dx1 = spdiags(ones(stimulusFilterParamsSize,1)*[-1 1],0:1,stimulusFilterParamsSi
 Dx = Dx1'*Dx1; 
 % Select lambda smoothing penalty by cross-validation 
  % grid of lambda values (ridge parameters)
-lambdavals = (2).^(7:14);
+lambdavals = (2).^(7:16);
 nlambda = length(lambdavals);
 
 %% Run optimization problem with diffrent lambdas
@@ -58,7 +64,7 @@ LL_LN_Train = zeros(nlambda,1);
 LL_LN_Test = zeros(nlambda,1);
 
 timeSeries = linspace(-stimulusFilterSizeForSimulation * deltaT, 0, stimulusFilterParamsSize);
-
+figure();
 % Run for each lambda, and learn the the parameters
 for i = 1:nlambda
     currentIteration = i
@@ -82,21 +88,23 @@ for i = 1:nlambda
     LL_GLM_Full_Train(i) = Loss_GLM_Full(learned_GLM_Full(:,i), dataForLearnning);
     LL_GLM_Full_Test(i) = Loss_GLM_Full(learned_GLM_Full(:,i), dataForTesting);
 
-%     hold on;
-%     subplot(1,2,1);
-%     plot(exp(learned_GLM_Full((stimulusFilterParamsSize + 2):end, i)' * postSpikeBaseVectors'));
-%     legend('Coupling Filter');
-%     xlabel('Time after spike spike');
-%     ylabel('intensity');
-%     title(['coupling filter estimator - iteration = :'  num2str(i)]);
-%     subplot(1,2,2);
-%     plot(timeSeries, learned_GLM_Full(1:stimulusFilterParamsSize, i));
-%     legend('Stimulus  Filter');
-%     xlabel('Time before  spike(s)');
-%     ylabel('intensity');
-%     title(['Stimulus filter estimator - iteration = :'  num2str(i)]);
-%     drawnow;
-%     hold off;
+    hold on;
+    subplot(1,2,1);
+    plot(exp(learned_GLM_Full((stimulusFilterParamsSize + 2):end, i)' * postSpikeBaseVectors'));
+    legend('Coupling Filter');
+    xlabel('Time after spike spike');
+    ylabel('intensity');
+    title(['coupling filter estimator - iteration = :'  num2str(i)]);
+    drawnow;
+    subplot(1,2,2);
+    plot(timeSeries,initStimulusFilter,...
+         timeSeries, learned_GLM_Full(1:stimulusFilterParamsSize, i));
+    legend('STA', 'GLM');
+    xlabel('Time before  spike(s)');
+    ylabel('intensity');
+    title(['Stimulus filter estimator - iteration = :'  num2str(i)]);
+    drawnow;
+    hold off;
 end
 
 % Get the minimum log likelihood index

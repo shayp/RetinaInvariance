@@ -14,13 +14,18 @@
 %            ihbas = orthogonalized basis
 %            ihbasis = original (non-orthogonal) basis 
 %
-function [iht, ihbas, ihbasis] = buildBaseVectorsForPostSpikeAndCoupling(numOfVectors,dt,hpeaks, b)
+function [iht, ihbas, ihbasis] = buildBaseVectorsForPostSpikeAndCoupling(numOfVectors,dt,hpeaks, b, absoulteRefactory)
+
 
 % Check input values
 if (hpeaks(1)+b) < 0, 
     error('b + first peak location: must be greater than 0'); 
 end
 
+if absoulteRefactory > 0
+    numOfAbsoluteRefractory = ceil(absoulteRefactory / dt);
+    numOfVectors = numOfVectors - numOfAbsoluteRefractory;
+end
 % nonlinearity for stretching x axis (and its inverse)
 nlin = @(x)log(x+1e-20);
 invnl = @(x)exp(x)-1e-20; % inverse nonlinearity
@@ -35,6 +40,15 @@ nt = length(iht);        % number of points in iht
 ff = @(x,c,dc)(cos(max(-pi,min(pi,(x-c)*pi/dc/2)))+1)/2; % raised cosine basis vector
 ihbasis = ff(repmat(nlin(iht+b), 1, numOfVectors), repmat(ctrs, nt, 1), db);
 
+if absoulteRefactory >= dt
+    refIndexes = find(iht <= absoulteRefactory);
+    ih0 = zeros(size(ihbasis, 1), numOfAbsoluteRefractory);
+    for i = 1:numOfAbsoluteRefractory
+        ih0(refIndexes(i), i) = 1;
+    end
+    ihbasis(refIndexes,:) = 0;
+    ihbasis = [ih0, ihbasis];
+end
 % compute orthogonalized basis
 ihbas = orth(ihbasis);
 
