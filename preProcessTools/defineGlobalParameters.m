@@ -11,14 +11,17 @@ stimulusFilterSizeForSimulation = stimulusFilterParamsSize * stimulusSpikeRatio;
 windowSizeForFiringRate = 20 / spikeBinSizeInms;
 trainFrac = 0.7;
 % Define number of base vectors for post spike filter
-lastPeak = 0.05;
-numOfBaseVectors = 10;
+lastPeak = 0.075;
 dt = 0.001;
-absoluterRefractory = 0.004;
-hpeaks = [absoluterRefractory + 2 * dt lastPeak];
-b = 0.001;
+absoluterRefractory = 0.003;
+ProbRefractory = absoluterRefractory;
+hpeaks = [ProbRefractory + dt lastPeak];
+b = 0.00001;
+numOfBaseVectors = 10;
+
 numOfRepeats = 10;
+
 save('globalParams', 'stimulusFilterParamsSize', 'spikesWantedSampFactor', 'stimulusWantedSampleFactor',...
     'numOfBaseVectors', 'lastPeak','dt', 'hpeaks', 'b', 'trainFrac','binsInSecond',...
-    'numOfRepeats', 'stimulusFilterSizeForSimulation', 'deltaT', 'windowSizeForFiringRate', 'stimulusSpikeRatio', 'absoluterRefractory');
+    'numOfRepeats', 'stimulusFilterSizeForSimulation', 'deltaT', 'windowSizeForFiringRate', 'stimulusSpikeRatio', 'absoluterRefractory', 'ProbRefractory');
 end

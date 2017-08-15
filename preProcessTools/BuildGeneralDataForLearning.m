@@ -29,7 +29,7 @@ fineStimulusDesignMatrix = buildStimulusDesignMatrix(stimulusFilterParamsSize * 
 save('stimlusFilters', 'stimlusFilters', 'fineStimulusFilters');
 
 % build post spike BaseVectors
-[~, ~, postSpikeBaseVectors] = buildBaseVectorsForPostSpikeAndCoupling(numOfBaseVectors,dt,hpeaks, b, absoluterRefractory);
+[~, ~, postSpikeBaseVectors] = buildBaseVectorsForPostSpikeAndCoupling(numOfBaseVectors,dt,hpeaks, b, absoluterRefractory, ProbRefractory);
 
 figure();
 plot(postSpikeBaseVectors);drawnow;

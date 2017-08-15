@@ -33,11 +33,8 @@ opts = optimset('Gradobj','on','Hessian','on');
 % Set start parameters for the optimization problem
 %cellPostSpike =  -0.5 * ones(size(trainSpikeHistoryDesignMatrix,1), 1);
 %cellPostSpike = linspace(-5, -1, size(trainSpikeHistoryDesignMatrix,1));
-cellPostSpike =  zeros(size(trainSpikeHistoryDesignMatrix,1), 1);
+cellPostSpike =  linspace(-6, -0.1,size(trainSpikeHistoryDesignMatrix,1))';
 cellPostSpike(1) = -10;
-cellPostSpike(2) = -10;
-cellPostSpike(3) = -4;
-cellPostSpike(4) = -4;
 meanFiringRate = 0;
 
 % This matrix computes differences between adjacent coeffs
@@ -46,7 +43,8 @@ Dx1 = spdiags(ones(stimulusFilterParamsSize,1)*[-1 1],0:1,stimulusFilterParamsSi
 Dx = Dx1'*Dx1; 
 % Select lambda smoothing penalty by cross-validation 
  % grid of lambda values (ridge parameters)
-lambdavals = (2).^(7:16);
+%lambdavals = (2).^(7:16);
+lambdavals = (2).^(7:14);
 nlambda = length(lambdavals);
 
 %% Run optimization problem with diffrent lambdas
@@ -89,14 +87,14 @@ for i = 1:nlambda
     LL_GLM_Full_Test(i) = Loss_GLM_Full(learned_GLM_Full(:,i), dataForTesting);
 
     hold on;
-    subplot(1,2,1);
-    plot(exp(learned_GLM_Full((stimulusFilterParamsSize + 2):end, i)' * postSpikeBaseVectors'));
-    legend('Coupling Filter');
-    xlabel('Time after spike spike');
-    ylabel('intensity');
-    title(['coupling filter estimator - iteration = :'  num2str(i)]);
-    drawnow;
-    subplot(1,2,2);
+%     subplot(1,2,1);
+%     plot(exp(learned_GLM_Full((stimulusFilterParamsSize + 2):end, i)' * postSpikeBaseVectors'));
+%     legend('Coupling Filter');
+%     xlabel('Time after spike spike');
+%     ylabel('intensity');
+%     title(['coupling filter estimator - iteration = :'  num2str(i)]);
+%     drawnow;
+%     subplot(1,2,2);
     plot(timeSeries,initStimulusFilter,...
          timeSeries, learned_GLM_Full(1:stimulusFilterParamsSize, i));
     legend('STA', 'GLM');
