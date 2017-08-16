@@ -4,7 +4,7 @@ function learnAndPrediectForNetworkConfiguration(neuronsInNetwork, scaledRepStim
     load ('RepStimulusExtended');
     load ('RepSpTimes'); 
     load('globalParams');
-    
+    addpath('Simulation');
 
     numOfNeurons = length(neuronsInNetwork);
     learnedParameters = learnModelsParameters(neuronsInNetwork);
@@ -26,11 +26,12 @@ function learnAndPrediectForNetworkConfiguration(neuronsInNetwork, scaledRepStim
         glmFullParams(i).meanFiringRate = learnedParameters(i).fullGLMParams.meanFiringRate;
         lnParams(i).meanFiringRate = learnedParameters(i).lnOptParams.meanFiringRate;
 
-        glmFullParams(i).couplingFilters = learnedParameters(i).fullGLMParams.couplingFilters;
-    
-        glmFullParams(i).simulation = zeros(numOfRepeats, length(scaledRepStimulus));
-        lnParams(i).simulation = zeros(numOfRepeats, length(scaledRepStimulus));
-        
+        glmFullParams(i).spikeHistoryFilter = learnedParameters(i).fullGLMParams.spikeHistoryFilter;
+        if numOfNeurons ~= 1
+            glmFullParams(i).couplingFilters = learnedParameters(i).fullGLMParams.couplingFilters;
+            glmFullParams(i).coupledNeurons = learnedParameters(i).coupledNeurons;
+        end
+            
         lnBusgangParams(i).stimulusFilter = learnedParameters(i).stimulusFilter;
         lnBusgangParams(i).expFunction = learnedParameters(i).lnBusgang.expFunction;
         lnBusgangParams(i).xData = learnedParameters(i).lnBusgang.xData;
@@ -39,17 +40,32 @@ function learnAndPrediectForNetworkConfiguration(neuronsInNetwork, scaledRepStim
     end
 
     for j = 1:numOfRepeats
-        
-        % Full glm simulation
-        response_GLM_Full = RunSimulation(numOfNeurons, scaledRepStimulus, glmFullParams, stimulusFilterSizeForSimulation, deltaT, 1);
-        response_LN = RunSimulation(numOfNeurons, scaledRepStimulus, lnParams, stimulusFilterSizeForSimulation, deltaT, 0);
-       
+        if numOfNeurons ~= 1
+                responseInRep = zeros(numOfNeurons, length(scaledRepStimulus));
+                for k = 1:numOfNeurons
+                   responseInRep(k,:) =  NeuronParameters(k).scaledRepSpikes(j,:);
+                end
+        end
+        response_LN = RunStimlusSimulation(numOfNeurons, scaledRepStimulus, lnParams, deltaT);
         for i = 1:numOfNeurons
-            NeuronParameters(i).GLMFullSimulation(j,:) =  response_GLM_Full(i,:);
             NeuronParameters(i).LNSimulation(j,:) =  response_LN(i,:);
+            
+            glmStimulusFilter = glmFullParams(i).stimulusFilter;
+            glmSpikeHistoryFilter = glmFullParams(i).spikeHistoryFilter;
+            glmMeanFiringRate =  glmFullParams(i).meanFiringRate;
+            if numOfNeurons == 1
+                response_GLM = RunNetworkSimulation(scaledRepStimulus, glmStimulusFilter, glmSpikeHistoryFilter(1:40), glmMeanFiringRate,deltaT, 0);
+            else
+                glmCouplingFilters = glmFullParams(i).couplingFilters;
+                coupledNeuronsIndexes = find(ismember(neuronsInNetwork, glmFullParams(i).coupledNeurons));
+                coupledSpikesTrain = responseInRep(coupledNeuronsIndexes,:);
+                response_GLM = RunNetworkSimulation(scaledRepStimulus, glmStimulusFilter, glmSpikeHistoryFilter, glmMeanFiringRate, deltaT, 1, glmCouplingFilters, coupledSpikesTrain);
+            end
+            NeuronParameters(i).GLMFullSimulation(j,:) =  response_GLM;
         end
     end
 
+    
     pathName = 'Results/Network';
     for i = 1:numOfNeurons
         NeuronParameters(i).GLMFullISI = [];
@@ -101,7 +117,6 @@ function learnAndPrediectForNetworkConfiguration(neuronsInNetwork, scaledRepStim
         NeuronParameters(i).varianceExplained = [LnVariance glmFullVariance LNBusgangVariance partVariance]; 
         NeuronParameters(i).spikeRateCorrelation = [lnCorrelation glmFullCorrelation lnBusgangcorrelation autoCorrelation];
         lnExplained = min(lnCorrelation/ autoCorrelation * 100, 100);
-        %glmPartialExplained = min(glmPartialCorrelation/ autoCorrelation * 100, 100);
         glmFullExplained = min(glmFullCorrelation/ autoCorrelation * 100, 100);
         lnBusgangExplained = min(lnBusgangcorrelation/ autoCorrelation * 100, 100);
 

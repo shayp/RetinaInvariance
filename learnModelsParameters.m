@@ -3,7 +3,8 @@ function neuronParameters = learnModelsParameters(neuronsInNetwork)
     load('globalParams'); 
     load('stimlusFilters');
     load('spikes');
-    load('postSpikeBaseVectors');
+    load('postSpikeHistory');
+    load('couplingBaseVectors');
     load('spikes');
     load('stimlusFilters');
     load('stimulus');
@@ -19,15 +20,18 @@ function neuronParameters = learnModelsParameters(neuronsInNetwork)
     % Build interpolation matrix for changing resolution
     interpMatrixTrain = kron(speye(stimulusTrainLength),ones(ceil(stimulusWantedSampleFactor / spikesWantedSampFactor),1));
     interpMatrixTest = kron(speye(stimulusTestLength),ones(ceil(stimulusWantedSampleFactor / spikesWantedSampFactor),1));
-
-     % get train and test spike design matrix
-    [trainSpikeHistoryDesignMatrix, testSpikeHistoryDesignMatrix] = splitSpikeHistoryDesignMatrixForLearning(spikeTrainLength, neuronsInNetwork);
      
     % Get network STA filters
     realStimulusFilters = stimlusFilters(:, neuronsInNetwork);
     
     % Run for each neuron in the network
     for i = 1:numOfNeurons
+        
+        coupledNeuronnsIndexes = find(neuronsInNetwork ~= neuronsInNetwork(i));
+        coupledNeurons = neuronsInNetwork(coupledNeuronnsIndexes);
+        
+        % get train and test spike design matrix
+        [trainSpikeHistoryDesignMatrix, testSpikeHistoryDesignMatrix] = splitSpikeHistoryDesignMatrixForLearning(spikeTrainLength, neuronsInNetwork(i), coupledNeurons);
         
         % Split train and test spike train
         trainSpikesTrain = spikes(neuronsInNetwork(i)).data(1:spikeTrainLength);
@@ -41,30 +45,20 @@ function neuronParameters = learnModelsParameters(neuronsInNetwork)
         runLearningModels(trainStimulusDesignMatrix, testStimulusDesignMatrix,...
         trainSpikeHistoryDesignMatrix, testSpikeHistoryDesignMatrix,...
         interpMatrixTrain, interpMatrixTest, trainSpikesTrain, testSpikesTrain, stimulusFilterParamsSize,...
-        binsInSecond,initStimulusFilter, numOfNeurons, numOfBaseVectors, postSpikeBaseVectors, stimulusFilterSizeForSimulation);
-    
-        % LN Busgang learning
+        binsInSecond,initStimulusFilter, length(coupledNeurons), numOfBaseVectorsHistory, numOfBaseVectorsCoupling, postSpikeHistory(neuronsInNetwork(i)).baseVectors, couplingBaseVectors, stimulusFilterSizeForSimulation);
+
+    % LN Busgang learning
         [expFunction, xData,yData] = runLNBusgang(fineStimulusFilters(:,neuronsInNetwork(i)), fineStimulus,  spikes(neuronsInNetwork(i)).data, windowSizeForFiringRate, 20);
     
         neuronParameters(i).neuronNumber = neuronsInNetwork(i);
+        neuronParameters(i).coupledNeurons = coupledNeurons;
         neuronParameters(i).stimulusFilter = fineStimulusFilters(:,neuronsInNetwork(i));
         neuronParameters(i).fullGLMParams = result_GLM_Full;
-        %neuronParameters(i).partialGLMParams = result_GLM_Partial;
         neuronParameters(i).lnOptParams = result_LN;
         neuronParameters(i).lnBusgang.expFunction = expFunction;
         neuronParameters(i).lnBusgang.xData = xData;
         neuronParameters(i).lnBusgang.yData = yData;
     end
     
-% timeSeries = linspace(-stimulusFilterSizeForSimulation * deltaT, 0, stimulusFilterSizeForSimulation);
-% figure();
-% plot(timeSeries, neuronParameters(1).stimulusFilter,...
-%      timeSeries, neuronParameters(1).lnOptParams.StimulusFilter,...
-%      timeSeries, neuronParameters(1).fullGLMParams.StimulusFilter,...
-%      timeSeries, neuronParameters(1).partialGLMParams.StimulusFilter);
-% legend('STA', 'LN', 'GLM Full', 'GLM Partial');
-% xlabel('Time before spike(s)');
-% ylabel('intensity');
-% title('Choosen stimulus filter(after resize):');
-% drawnow;
+
 end

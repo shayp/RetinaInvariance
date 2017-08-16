@@ -1,6 +1,7 @@
 function plotResults(numOfNeurons, filePath)
 load('globalParams.mat');
 load([filePath 'FinalNeuronParameters']);
+load('postSpikeHistory');
 numOfSubPlotsFig1 = numOfNeurons + 2;
 numofRowsFig1 = ceil(numOfSubPlotsFig1 / 2);
 numOfSubPlotsFig2 = 4;
@@ -36,18 +37,33 @@ for i = 1:numOfNeurons
     ylabel('exp(X)');
     title(['nonLinear Exp: ' num2str(NeuronParameters(i).neuronIndex)]);
     
-    for j = 1:numOfNeurons
-        % Plot leaned spike history filter
-        subplot(numofRowsFig1,2, j + 2);
-        binsOfCouplingLength = length(glmFullParams(i).couplingFilters(j,:));
-        timeAfterSpike = linspace(1 / binsInSecond, binsOfCouplingLength / binsInSecond, binsOfCouplingLength);
-        plot(timeAfterSpike, exp(glmFullParams(i).couplingFilters(j,:)),...
+    subplot(numofRowsFig1,2, 3);
+        binsOfHistoryLength = length(glmFullParams(i).spikeHistoryFilter);
+        timeAfterSpike = linspace(1 / binsInSecond, binsOfHistoryLength / binsInSecond, binsOfHistoryLength);
+        plot(timeAfterSpike, exp(glmFullParams(i).spikeHistoryFilter),...
              timeAfterSpike, ones(1, length(timeAfterSpike)), '--');
-         legend('Full GLM','location', 'bestoutside');
-        title(['coupling filter Neuron: ' num2str(NeuronParameters(i).neuronsInNetwork(j))]);
+        title(['History filter Neuron: ' num2str(NeuronParameters(i).neuronIndex)]);
         xlabel('Time after  spike (s)');
         ylabel('Firing factor');
-    end
+        
+        subplot(numofRowsFig1,2, 4);
+        plot(timeAfterSpike, postSpikeHistory(NeuronParameters(i).neuronIndex).baseVectors);
+        title(['History filter Neuron: ' num2str(NeuronParameters(i).neuronIndex)]);
+        xlabel('Time after  spike (s)');
+        ylabel('Firing factor');
+        
+        for j = 1:numOfNeurons - 1
+            % Plot leaned spike history filter
+            subplot(numofRowsFig1,2, j + 4);
+            binsOfCouplingLength = length(glmFullParams(i).couplingFilters(j,:));
+            timeAfterSpike = linspace(1 / binsInSecond, binsOfCouplingLength / binsInSecond, binsOfCouplingLength);
+            plot(timeAfterSpike, exp(glmFullParams(i).couplingFilters(j,:)),...
+                 timeAfterSpike, ones(1, length(timeAfterSpike)), '--');
+             legend('Full GLM','location', 'bestoutside');
+            title(['coupling filter Neuron: ' num2str( glmFullParams(i).coupledNeurons(j))]);
+            xlabel('Time after  spike (s)');
+            ylabel('Firing factor');
+        end
     
         savefig(fig1,[filePath 'Neuron_' num2str(NeuronParameters(i).neuronIndex) '_Filters']);
         fig2 = figure('visible', 'on');

@@ -1,18 +1,26 @@
-function [trainSpikeHistoryDesignMatrix, testSpikeHistoryDesignMatrix] = splitSpikeHistoryDesignMatrixForLearning(trainLength, neuronsToInclude)
+function [trainSpikeHistoryDesignMatrix, testSpikeHistoryDesignMatrix] = splitSpikeHistoryDesignMatrixForLearning(trainLength,selectedNeuron, coupledNeurons)
 load('spikeHistoryData');
-numOfNeurons =  length(neuronsToInclude);
+load('couplingData');
+load('globalParams');
+
+numOfCoupledNeurons =  length(coupledNeurons);
 tempDesignMatrix = spikeHistoryData(1).spikeHistoryDesignMatrix;
 spikeLength = size(tempDesignMatrix,2);
-numOfBaseVectors = size(tempDesignMatrix,1);
 testLength = spikeLength - trainLength;
-trainSpikeHistoryDesignMatrix = zeros(numOfBaseVectors * numOfNeurons,trainLength);
-testSpikeHistoryDesignMatrix = zeros(numOfBaseVectors * numOfNeurons,testLength);
 
-for i = 1:numOfNeurons
-    currentDesignMatrix = spikeHistoryData(neuronsToInclude(i)).spikeHistoryDesignMatrix;
-    trainSpikeHistoryDesignMatrix((i - 1) * numOfBaseVectors + 1:i * numOfBaseVectors,:) = ...
+trainSpikeHistoryDesignMatrix = zeros(numOfBaseVectorsHistory + numOfBaseVectorsCoupling * numOfCoupledNeurons,trainLength);
+testSpikeHistoryDesignMatrix = zeros(numOfBaseVectorsHistory + numOfBaseVectorsCoupling * numOfCoupledNeurons,testLength);
+
+spikeHistoryDesignMatrix = spikeHistoryData(selectedNeuron).spikeHistoryDesignMatrix;
+trainSpikeHistoryDesignMatrix(1:numOfBaseVectorsHistory,:) = spikeHistoryDesignMatrix(:,1:trainLength);
+testSpikeHistoryDesignMatrix(1:numOfBaseVectorsHistory,:) = spikeHistoryDesignMatrix(:,trainLength + 1:end);
+    
+for i = 1:numOfCoupledNeurons
+    currentDesignMatrix = couplingData(coupledNeurons(i)).couplingDesignMatrix;
+    trainSpikeHistoryDesignMatrix(numOfBaseVectorsHistory + (i - 1) * numOfBaseVectorsCoupling + 1:numOfBaseVectorsHistory + i * numOfBaseVectorsCoupling,:) = ...
         currentDesignMatrix(:,1:trainLength);
-    testSpikeHistoryDesignMatrix((i - 1) * numOfBaseVectors + 1:i * numOfBaseVectors,:) = ...
+    testSpikeHistoryDesignMatrix(numOfBaseVectorsHistory + (i - 1) * numOfBaseVectorsCoupling + 1:numOfBaseVectorsHistory + i * numOfBaseVectorsCoupling,:) = ...
         currentDesignMatrix(:,trainLength + 1:end);
 end
+
 end
