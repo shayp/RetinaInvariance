@@ -1,8 +1,10 @@
 function postSpikeHistory = buildNeuronsPostSpikeFilters(dt, lastPeak, b, numOfVectors, absoluteRefractoryArray, ISIPeakArr)
     numOfNeurons = length(absoluteRefractoryArray);
     for i = 1:numOfNeurons
-        firstPeak = max(absoluteRefractoryArray(i) + dt, ISIPeakArr(i));
+        firstPeak = absoluteRefractoryArray(i) + dt;
         peaks = [firstPeak lastPeak];
-        [~, ~, postSpikeHistory(i).baseVectors] =  buildBaseVectorsForPostSpikeAndCoupling(numOfVectors,dt,peaks, b, absoluteRefractoryArray(i));
+        [~, ~, baseVectors] =  buildBaseVectorsForPostSpikeAndCoupling(numOfVectors,dt,peaks, b, absoluteRefractoryArray(i));
+        %lastIndex = min(75, size(baseVectors,1));
+        postSpikeHistory(i).baseVectors = baseVectors;
     end
 end

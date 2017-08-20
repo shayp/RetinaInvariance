@@ -15,11 +15,14 @@ function [spikes] = changeSpikeResolution(spikeTimes, lastIndex, wantedSampFacto
     for i = 1:numOfNeurons
         % Get the fine temporal resolution of the spike train
         spikesInSampleSize =  double(ismember(tempVector, spikeTimes(i).sp));
+        fineSpikeIndexes = find(spikesInSampleSize);
         spikes(i).data = zeros(strech, 1);
         
-        % Bin the spike train to more coarse resolution
-        for j = 1: strech  -1
-            spikes(i).data(j) = sum(spikesInSampleSize((j - 1) * wantedSampFactor + 1: j * wantedSampFactor));
-        end
+%         % Bin the spike train to more coarse resolution
+%         for j = 1: strech  -1
+%             spikes(i).data(j) = sum(spikesInSampleSize((j - 1) * wantedSampFactor + 1: j * wantedSampFactor));
+%         end
+        spikedIndexes = floor(fineSpikeIndexes / wantedSampFactor);
+        spikes(i).data(spikedIndexes) = ones(length(spikedIndexes), 1);
     end
 end

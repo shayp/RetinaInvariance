@@ -22,7 +22,7 @@ function neuronParameters = learnModelsParameters(neuronsInNetwork)
     interpMatrixTest = kron(speye(stimulusTestLength),ones(ceil(stimulusWantedSampleFactor / spikesWantedSampFactor),1));
      
     % Get network STA filters
-    realStimulusFilters = stimlusFilters(:, neuronsInNetwork);
+    networkStimulusFilters = stimlusFilters(:, neuronsInNetwork);
     
     % Run for each neuron in the network
     for i = 1:numOfNeurons
@@ -38,7 +38,7 @@ function neuronParameters = learnModelsParameters(neuronsInNetwork)
         testSpikesTrain = spikes(neuronsInNetwork(i)).data(spikeTrainLength + 1:end);
         
         % Get current neuron STA filter
-        initStimulusFilter = realStimulusFilters(:,i);
+        initStimulusFilter = networkStimulusFilters(:,i);
         
         % Learn optimization models for current neuron
         [result_GLM_Full, result_LN] = ...

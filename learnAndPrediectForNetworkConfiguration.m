@@ -54,7 +54,7 @@ function learnAndPrediectForNetworkConfiguration(neuronsInNetwork, scaledRepStim
             glmSpikeHistoryFilter = glmFullParams(i).spikeHistoryFilter;
             glmMeanFiringRate =  glmFullParams(i).meanFiringRate;
             if numOfNeurons == 1
-                response_GLM = RunNetworkSimulation(scaledRepStimulus, glmStimulusFilter, glmSpikeHistoryFilter(1:40), glmMeanFiringRate,deltaT, 0);
+                response_GLM = RunNetworkSimulation(scaledRepStimulus, glmStimulusFilter, glmSpikeHistoryFilter, glmMeanFiringRate,deltaT, 0);
             else
                 glmCouplingFilters = glmFullParams(i).couplingFilters;
                 coupledNeuronsIndexes = find(ismember(neuronsInNetwork, glmFullParams(i).coupledNeurons));

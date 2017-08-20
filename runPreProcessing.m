@@ -1,3 +1,4 @@
+clear all;
 load( 'NonRepeatStim');    
 load('NonRepeatstimtimes'); 
 load('SpTimes'); 

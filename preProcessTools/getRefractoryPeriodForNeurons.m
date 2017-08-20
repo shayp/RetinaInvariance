@@ -12,13 +12,20 @@ for i =1:numOfNeurons
         ISIPr(j) = sum(ISI == j);
     end
     ISIPr = ISIPr / sum(ISIPr);
-    [maxDiff, wantedIndex] = max(diff(ISIPr));
-    if wantedIndex > 10
-        wantedIndex = 10;
+     wantedIndexes = find(ISIPr >= 0.01);
+     if isempty(wantedIndexes)
+         wantedIndex = 2;
+     else
+        wantedIndex = wantedIndexes(1) - 1;
+     end
+     
+    if wantedIndex > 4
+        wantedIndex = 4;
     end
-    refreactoryPeriodArr(i) = max(2,wantedIndex - 1);
+    refreactoryPeriodArr(i) = max(2,wantedIndex);
     
-    [~, ISIPeakArr(i)] = max(ISIPr);
+    [~, ISIPeak] = max(ISIPr);
+    ISIPeakArr(i) = min(10, ISIPeak);
 end
 
 end
