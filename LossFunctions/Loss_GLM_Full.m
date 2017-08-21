@@ -20,7 +20,7 @@ nsp = sum(dataForLearnning.spikesTrain);
 
 % Extract some other stuff we'll use a lot
 stimulusDesignMatrix = dataForLearnning.stimulusDesignMatrix; % stimulus design matrix
-spikeHistoryDesignMatrix = dataForLearnning.spikeHistoryDesignMatrix';    % spike history design matrix
+spikeHistoryDesignMatrix = dataForLearnning.spikeHistoryDesignMatrix;    % spike history design matrix
 dataLen = dataForLearnning.dataLen;   % number of bins in spike train vector
 
 % -------- Compute sum of filter reponses -----------------------
@@ -54,7 +54,6 @@ logli = Trm0 + Trm1;
     dLdStimulusFilter = dLdStimulusFilter0 * binSizeInSecond  - dLdStimulusFilter1;
     dLdMeanFiringRate = dLdMeanFiringRate0*binSizeInSecond - dLdMeanFiringRate1;
     dLdSpikeHistoryFilter = dLdSpikeHistoryFilter0 * binSizeInSecond - dLdSpikeHistoryFilter1;
-    
     dL = [dLdStimulusFilter; dLdMeanFiringRate; dLdSpikeHistoryFilter];
     
     rrdiag = spdiags(expValue, 0, dataLen, dataLen);

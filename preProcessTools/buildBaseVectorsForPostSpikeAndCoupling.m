@@ -23,6 +23,12 @@ end
 
 if absoulteRefactory >= dt
     numOfVectors = numOfVectors - 1;
+    if hpeaks(1) > absoulteRefactory + dt
+        numOFOneValueVectors = ceil((hpeaks(1) - absoulteRefactory -dt)/ dt);
+        firstOneValuedVector = ceil((absoulteRefactory + dt)/ dt);
+        numOfVectors = numOfVectors - numOFOneValueVectors;
+    end
+        
 end
 % nonlinearity for stretching x axis (and its inverse)
 nlin = @(x)log(x+1e-20);
@@ -43,7 +49,17 @@ if absoulteRefactory >= dt
     ih0 = zeros(size(ihbasis, 1), 1);
     ih0(absrefIndexes,1) = 1;
     ihbasis(absrefIndexes,:) = 0;
-    ihbasis = [ih0, ihbasis];
+    
+    ihOneValued = [];
+    if hpeaks(1) > absoulteRefactory + dt
+        OneValuedIndexes = find(iht > absoulteRefactory & iht < hpeaks(1));
+        ihOneValued = zeros(size(ihbasis, 1), numOFOneValueVectors);
+        for i = 1:length(OneValuedIndexes)
+            ihOneValued(OneValuedIndexes(i),i) = 1;
+        end
+        ihbasis(OneValuedIndexes,:) = 0;
+    end
+    ihbasis = [ih0,ihOneValued, ihbasis];
 end
 % compute orthogonalized basis
 ihbas = orth(ihbasis);

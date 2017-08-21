@@ -33,9 +33,9 @@ dataForTesting. spikeIndexes = find(testSpikesTrain);
 opts = optimset('Gradobj','on','Hessian','on');
 
 % Set start parameters for the optimization problem
-cellPostSpike =  zeros(size(trainSpikeHistoryDesignMatrix,1), 1);
-cellPostSpike(1) = -10;
-meanFiringRate = -10;
+cellPostSpike =  zeros(size(trainSpikeHistoryDesignMatrix,2), 1);
+cellPostSpike(1:end) = linspace(-10, 0, length(cellPostSpike))';
+meanFiringRate = 0;
 
 % This matrix computes differences between adjacent coeffs
 Dx1 = spdiags(ones(stimulusFilterParamsSize,1)*[-1 1],0:1,stimulusFilterParamsSize - 1,stimulusFilterParamsSize);
@@ -45,14 +45,13 @@ Dx = Dx1'*Dx1;
 
 % Select lambda smoothing penalty by cross-validation 
  % grid of lambda values (ridge parameters)
-lambdavals = (2).^(-1:14);
+lambdavals = (2).^(7:15);
 
 nlambda = length(lambdavals);
 
 %% Run optimization problem with diffrent lambdas
 params_LN_Bias = [initStimulusFilter; meanFiringRate];
 params_GLM_Full = [initStimulusFilter; meanFiringRate; cellPostSpike];
-size(params_GLM_Full)
 
 learned_LN_Bias = zeros(length(params_LN_Bias),nlambda);
 learned_GLM_Full = zeros(length(params_GLM_Full),nlambda);
@@ -87,14 +86,15 @@ for i = 1:nlambda
     learned_GLM_Full(:,i) = fminunc(lossfun,params_GLM_Full,opts);
     LL_GLM_Full_Train(i) = Loss_GLM_Full(learned_GLM_Full(:,i), dataForLearnning);
     LL_GLM_Full_Test(i) = Loss_GLM_Full(learned_GLM_Full(:,i), dataForTesting);
-
+    
+    clf;
     hold on;
     subplot(1,2,1);
     plot(exp(learned_GLM_Full(stimulusFilterParamsSize + 2:stimulusFilterParamsSize + numOfSpikeHistoryBaseVectors + 1, i)' * spikeHistoryBaseVectors'));
     legend('Coupling Filter');
     xlabel('Time after spike spike');
     ylabel('intensity');
-    title(['History filter estimator - iteration = :'  num2str(i)]);
+    title(['History filter estimator']);
     drawnow;
     hold off;
     hold on;
@@ -117,9 +117,7 @@ imin_GLM_Full
 % imin_GLM_Partial
 bestParams_LN = learned_LN_Bias(:, imin_LN_Bias);
 bestParams_GLM_Full = learned_GLM_Full(:, imin_GLM_Full);
-bestParams_GLM_Full(stimulusFilterParamsSize + 2) = -10;
 result_GLM_Full.spikeHistoryFilter = bestParams_GLM_Full(stimulusFilterParamsSize + 2 :stimulusFilterParamsSize + numOfSpikeHistoryBaseVectors + 1)' * spikeHistoryBaseVectors';
-result_GLM_Full.spikeHistoryFilter(50:end) = 0;
 for Index = 1:numOfCoupledNeurons
     result_GLM_Full.couplingFilters(Index,:) = bestParams_GLM_Full(stimulusFilterParamsSize + numOfSpikeHistoryBaseVectors + (Index  - 1) * numOfCouplingBaseVectors + 2 :stimulusFilterParamsSize + numOfSpikeHistoryBaseVectors + (Index) * numOfCouplingBaseVectors + 1)' * couplingBaseVectors';
 end

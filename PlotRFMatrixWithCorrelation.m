@@ -1,7 +1,7 @@
 numOfNeruons = 251;
 neuronCorretlation = zeros(numOfNeruons, 1);
 load('RFMatrix');
-pathFolder = './Results/5_8_17_All/';
+pathFolder = './Results/';
 d = dir(pathFolder);
 isub = [d(:).isdir]; %# returns logical vector
 nameFolds = {d(isub).name}';

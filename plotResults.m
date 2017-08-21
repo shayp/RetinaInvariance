@@ -2,7 +2,7 @@ function plotResults(numOfNeurons, filePath)
 load('globalParams.mat');
 load([filePath 'FinalNeuronParameters']);
 load('postSpikeHistory');
-numOfSubPlotsFig1 = numOfNeurons + 2;
+numOfSubPlotsFig1 = numOfNeurons + 3;
 numofRowsFig1 = ceil(numOfSubPlotsFig1 / 2);
 numOfSubPlotsFig2 = 4;
 numofRowsFig2 = ceil(numOfSubPlotsFig2 / 2);

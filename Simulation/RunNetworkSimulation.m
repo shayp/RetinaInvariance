@@ -39,7 +39,7 @@ while currentBin <= simulationLength
         iiPostSpk = ispk+1:mxi; % time bins affected by post-spike kernel
 
         if ~isempty(iiPostSpk)
-            baseValue(iiPostSpk) = baseValue(iiPostSpk) + spikeHistoryFilter(1:length(iiPostSpk))';
+            historyValue(iiPostSpk) = spikeHistoryFilter(1:length(iiPostSpk))';
         end
         tspnext = exprnd(1);  % draw next spike time
         rprev = 0; % reset integrated intensity
